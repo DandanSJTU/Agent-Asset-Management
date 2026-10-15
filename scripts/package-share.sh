@@ -123,14 +123,32 @@ if [[ $WITH_NATIVE -eq 1 ]]; then
 fi
 
 # ── 3. 密钥脱敏（安全网）────────────────────────────────────
-SECRET_RE='sk-[A-Za-z0-9][A-Za-z0-9_-]{7,}'
+# 只匹配「真密钥形态」，宁可漏也不可误伤源码：
+#   · sk-<proj|ant|mem>-<24位以上>   OpenAI project / Anthropic / tdai user_key
+#   · sk-<28位以上无分隔字符>         DeepSeek / OpenAI 经典形态（如 32 位 hex）
+#   · Bearer <24位以上>
+# 刻意不放宽：源码里的 sk-executor / sk-source-router / sk-mem-xxxxxxxx 等
+# 标识符与示例串都不满足上述长度，不会被改坏。
+#
+# 注意：必须用 -E（扩展正则）。写成 BRE 时 {7,} 未转义会被当字面量，
+# 替换会静默失效 —— 这正是本脚本早期版本的 bug。
+SECRET_RE='sk-(proj|ant|mem)-[A-Za-z0-9_-]{24,}|sk-[A-Za-z0-9]{28,}|Bearer[[:space:]]+[A-Za-z0-9._+/=~-]{24,}'
 HITS="$(grep -rIlE "$SECRET_RE" "$STAGE" 2>/dev/null || true)"
 if [[ -n "$HITS" ]]; then
   warn "以下文件命中疑似密钥，已替换为 sk-REPLACE_ME："
   echo "$HITS" | sed 's/^/       /' >&2
   # BSD sed（macOS）要求 -i 后带备份后缀参数，GNU sed 不用——按实现分流
-  if sed --version >/dev/null 2>&1; then SED_INPLACE=(sed -i); else SED_INPLACE=(sed -i ''); fi
+  if sed --version >/dev/null 2>&1; then SED_INPLACE=(sed -E -i); else SED_INPLACE=(sed -E -i ''); fi
   echo "$HITS" | tr '\n' '\0' | xargs -0 "${SED_INPLACE[@]}" "s/$SECRET_RE/sk-REPLACE_ME/g"
+
+  # 替换后复核：仍有残留说明形态更特殊，列出来让人工判断，不自动二次改写
+  LEFTOVER="$(grep -rInE "$SECRET_RE" "$STAGE" 2>/dev/null | head -20 || true)"
+  if [[ -n "$LEFTOVER" ]]; then
+    warn "替换后仍有残留（请人工确认是否为真实密钥）："
+    echo "$LEFTOVER" | sed 's/^/       /' >&2
+  fi
+else
+  ok "密钥扫描通过（无命中）"
 fi
 
 # ── 4. 个人数据 / 机器路径检查 ───────────────────────────────
