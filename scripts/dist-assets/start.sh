@@ -8,6 +8,9 @@
 #
 # 配置来源：runtime/config/llm.env（唯一真源）
 #   改完 LLM 配置后重新执行本脚本即生效（会重新渲染各组件配置文件）。
+#
+# 端口冲突时可用环境变量覆盖（改完会自动渲染进对应配置文件）：
+#   CORE_PORT=9420 PANEL_PORT=9125 KNOWLEDGE_PORT=9424 PROXY_PORT=9096 ./start.sh
 # ============================================================
 set -uo pipefail
 
@@ -17,10 +20,10 @@ CONFIG="$RUNTIME/config"
 LOGS="$RUNTIME/logs"
 PIDS="$RUNTIME/pids"
 
-CORE_PORT=8420
-KNOWLEDGE_PORT=8424
-PANEL_PORT=8125
-PROXY_PORT=8096
+CORE_PORT="${CORE_PORT:-8420}"
+KNOWLEDGE_PORT="${KNOWLEDGE_PORT:-8424}"
+PANEL_PORT="${PANEL_PORT:-8125}"
+PROXY_PORT="${PROXY_PORT:-8096}"
 
 # curl 直连本机：绕过可能存在的 http_proxy，否则 127.0.0.1 的健康检查会被代理拦掉
 CURL="curl --noproxy 127.0.0.1,localhost"
@@ -68,14 +71,18 @@ render() {
       -e "s|__PROMPT_MODE__|$PROMPT_MODE|g" \
       -e "s|__PROXY_UPSTREAM_URL__|$PROXY_UPSTREAM_URL|g" \
       -e "s|__PROXY_UPSTREAM_API_KEY__|$PROXY_UPSTREAM_API_KEY|g" \
+      -e "s|__CORE_PORT__|$CORE_PORT|g" \
+      -e "s|__KNOWLEDGE_PORT__|$KNOWLEDGE_PORT|g" \
+      -e "s|__PANEL_PORT__|$PANEL_PORT|g" \
+      -e "s|__PROXY_PORT__|$PROXY_PORT|g" \
       "$src" > "$dst"
 }
 
 [[ -f "$ROOT/config-templates/tdai-gateway.yaml" ]] \
   || die "缺少 $ROOT/config-templates/tdai-gateway.yaml"
-render "$ROOT/config-templates/tdai-gateway.yaml"   "$CONFIG/tdai-gateway.yaml"
-render "$ROOT/config-templates/proxy-config.yaml"   "$CONFIG/proxy-config.yaml"
-cp -f  "$ROOT/config-templates/metadata-instances.json" "$CONFIG/metadata-instances.json"
+render "$ROOT/config-templates/tdai-gateway.yaml"       "$CONFIG/tdai-gateway.yaml"
+render "$ROOT/config-templates/proxy-config.yaml"       "$CONFIG/proxy-config.yaml"
+render "$ROOT/config-templates/metadata-instances.json" "$CONFIG/metadata-instances.json"
 
 # ── 3. 进程启动函数 ─────────────────────────────────────────
 # nohup + 子 shell 写 PID：exec 后该 PID 即 node 进程本身，便于 stop.sh 精确回收。

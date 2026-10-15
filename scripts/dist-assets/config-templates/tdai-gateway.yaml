@@ -12,7 +12,7 @@ deployMode: standalone
 stateBackend: local
 
 server:
-  port: 8420
+  port: __CORE_PORT__
   host: 0.0.0.0
 
 data:

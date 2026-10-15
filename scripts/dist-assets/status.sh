@@ -11,16 +11,22 @@ PIDS="$ROOT/runtime/pids"
 LOGS="$ROOT/runtime/logs"
 CURL="curl --noproxy 127.0.0.1,localhost"
 
+# 与 start.sh 保持一致：端口可用同名环境变量覆盖
+CORE_PORT="${CORE_PORT:-8420}"
+KNOWLEDGE_PORT="${KNOWLEDGE_PORT:-8424}"
+PANEL_PORT="${PANEL_PORT:-8125}"
+PROXY_PORT="${PROXY_PORT:-8096}"
+
 if [[ -t 1 ]]; then C_GRN=$'\033[32m'; C_RED=$'\033[31m'; C_YLW=$'\033[33m'; C_RST=$'\033[0m'
 else C_GRN=""; C_RED=""; C_YLW=""; C_RST=""; fi
 
 show() {
   printf "%-12s %-8s %-24s %s\n" "服务" "端口" "状态" "地址"
   printf "%s\n" "────────────────────────────────────────────────────────────────"
-  check core      8420 "http://localhost:8420/health"
-  check knowledge 8424 "http://localhost:8424/health"
-  check panel     8125 "http://localhost:8125/"
-  check proxy     8096 "http://localhost:8096/health"
+  check core      "$CORE_PORT"     "http://localhost:$CORE_PORT/health"
+  check knowledge "$KNOWLEDGE_PORT" "http://localhost:$KNOWLEDGE_PORT/health"
+  check panel     "$PANEL_PORT"     "http://localhost:$PANEL_PORT/"
+  check proxy     "$PROXY_PORT"     "http://localhost:$PROXY_PORT/health"
   echo ""
   if [[ -f "$ROOT/runtime/config/.admin-key" ]]; then
     echo "面板登录 key: $(cat "$ROOT/runtime/config/.admin-key")"

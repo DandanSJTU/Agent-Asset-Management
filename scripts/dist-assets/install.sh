@@ -214,7 +214,7 @@ fi
 echo ""
 echo "${C_BOLD}${C_GRN}安装完成${C_RST}"
 if [[ $SKIP_START -eq 0 ]]; then
-  echo "  面板地址   http://localhost:8125/"
+  echo "  面板地址   http://localhost:${PANEL_PORT:-8125}/"
   echo "  登录 key   $(cat "$CONFIG/.admin-key" 2>/dev/null || echo '见 runtime/config/.admin-key')"
 fi
 echo "  配置修改   编辑 runtime/config/llm.env 后执行 ./start.sh"

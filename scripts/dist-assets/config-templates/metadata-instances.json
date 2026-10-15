@@ -3,7 +3,7 @@
     {
       "id": "default",
       "name": "default",
-      "gateway_endpoint": "http://127.0.0.1:8420",
+      "gateway_endpoint": "http://127.0.0.1:__CORE_PORT__",
       "api_key": "local"
     }
   ]
