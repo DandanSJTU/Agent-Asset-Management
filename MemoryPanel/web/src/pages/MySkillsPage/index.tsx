@@ -34,6 +34,7 @@ import {
 import SkillDetailPane from '@/pages/SkillsPage/components/SkillDetailPane';
 import ImportSkillDialog from '@/pages/SkillsPage/components/ImportSkillDialog';
 import ImportFromInsightDialog from './components/ImportFromInsightDialog';
+import DeploySkillDialog from './components/DeploySkillDialog';
 import { useAuthStore } from '@/stores/auth';
 import {
   personalListSkills,
@@ -55,6 +56,7 @@ export function MySkillsPage() {
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showImportFromInsight, setShowImportFromInsight] = useState(false);
+  const [showDeploy, setShowDeploy] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
 
@@ -141,6 +143,16 @@ export function MySkillsPage() {
           subtitle={t('mySkills.subtitle', { count: skills.length })}
           actions={
             <>
+              {/* 一键部署：置于操作区首位（与其他入口并列的页面级动作），未选中 skill 时禁用 */}
+              <Button
+                type="primary"
+                onClick={() => setShowDeploy(true)}
+                disabled={!selectedSkillId}
+                tooltip={!selectedSkillId ? t('mySkills.deploy.tooltip.empty') : undefined}
+                data-guide="deploy-skill"
+              >
+                {t('mySkills.deploy')}
+              </Button>
               <Button
                 onClick={handleExport}
                 disabled={!selectedSkillId}
@@ -247,6 +259,18 @@ export function MySkillsPage() {
             onClose={() => setShowImportFromInsight(false)}
             onImported={() => {
               setShowImportFromInsight(false);
+              void refresh();
+            }}
+          />
+        )}
+
+        {showDeploy && selectedSkill && (
+          <DeploySkillDialog
+            skillId={selectedSkill.skill_id}
+            skillName={selectedSkill.name}
+            onClose={() => setShowDeploy(false)}
+            onDeployed={() => {
+              setShowDeploy(false);
               void refresh();
             }}
           />

@@ -100,6 +100,16 @@ export interface SkillTaskEntry {
    * mode:'strict' → SkillExtractor 用 SKILL_REVIEW_PROMPT_STRICT (v1 严格 gate)。
    */
   mode?: 'strict';
+  /**
+   * 显式导入场景（面板 skill 导入弹窗的目录 / 对话导入）要求落库即团队共享：
+   * handler 收到 body.visibility='team' 时写入；SkillCoreSink 消费时对
+   * action='create' 的 candidate 显式把 asset visibility 置为 'team'。
+   *
+   * 不写（undefined）= 保持 ensureSkillAsset 的 private 默认 —— 2026-07
+   * 安全决策：skill 内容可能含内部知识 / 脚本 / 凭证注释，默认私密、主动
+   * 共享。conversation/add 自动归档路径不写此字段，行为零变化。
+   */
+  visibility?: 'team' | 'private';
 }
 
 /** _tasks.json 整体结构。 */

@@ -257,6 +257,14 @@ export const extractRequestSchema = z.object({
    * 走当前 v2 SKILL_REVIEW_PROMPT (宽松, 广召回), 老 client 完全兼容。
    */
   strict_mode: z.boolean().optional(),
+  /**
+   * 显式导入场景（面板 skill 导入弹窗的目录 / 对话导入）传 'team'：
+   * 抽取落库的 skill asset 直接置团队共享，避免「导入成功但技能页不可见」
+   * （「团队资产」tab 只列 visibility=team 的技能）。不传 = 保持 private
+   * 默认（ensureSkillAsset 2026-07 安全决策：skill 内容可能含内部知识 /
+   * 脚本 / 凭证注释，默认私密、主动共享）。
+   */
+  visibility: z.enum(["team", "private"]).optional(),
 });
 
 /**

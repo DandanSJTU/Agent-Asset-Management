@@ -9,7 +9,7 @@
  *
  * Admin 与 Member 的 Agent / 资产操作能力一致（均可编辑）；唯一差异在成员管理：
  * member 不能创建用户账号，只能按 user_id 邀请已有用户；admin 可新建用户并发放
- * user_key，也可新建团队。资产步骤逐一跳入 Wiki / Code / Skill / Chat Memory 页面介绍。
+ * user_key，也可新建团队。资产步骤逐一跳入 Wiki / Code / Skill / 对话记忆 页面介绍。
  *
  * 健壮性：每步 element 选择器若在目标页缺失（如成员无「添加成员」权限），
  * 自动 fallback 到全局 Header 品牌区，避免 Guide 因元素缺失而整体消失。
@@ -146,7 +146,7 @@ const AGENT_BIND_STEP: OnboardingStep = {
   descKey: 'onboarding.guide.agentBind.desc',
 };
 
-/** 每个资产页各自跳入介绍的引导步骤（Wiki / Code / Skill / Chat Memory） */
+/** 每个资产页各自跳入介绍的引导步骤（Wiki / Code / Skill / 对话记忆） */
 const ASSET_STEPS: OnboardingStep[] = [
   {
     path: '/wiki',

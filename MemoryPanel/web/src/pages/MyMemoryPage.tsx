@@ -1,12 +1,12 @@
 /**
- * MyMemoryPage — 我的记忆（Chat_Memory 的 L1 / L2 / L3 分层提炼视图）。
+ * MyMemoryPage — 我的记忆（对话记忆的 L1 / L2 / L3 分层提炼视图）。
  *
  * 2026-10-15 收敛：原本「分层提炼」车道（observations/candidates/axioms）由
- * agents/layered-refine 自研引擎（codebuddy CLI）驱动，与 Chat_Memory 的提炼
- * 是平行双实现。现统一复用 Chat_Memory 的提炼管线：
- *   - L1 观测：/api/v1/personal/memories（Chat_Memory L1 原子记忆）
- *   - L2 场景：/api/v1/personal/scenes（Chat_Memory SceneExtractor 场景块）
- *   - L3 画像：/api/v1/personal/persona（Chat_Memory PersonaGenerator persona.md）
+ * agents/layered-refine 自研引擎（codebuddy CLI）驱动，与对话记忆的提炼
+ * 是平行双实现。现统一复用对话记忆的提炼管线：
+ *   - L1 观测：/api/v1/personal/memories（对话记忆 L1 原子记忆）
+ *   - L2 场景：/api/v1/personal/scenes（对话记忆 SceneExtractor 场景块）
+ *   - L3 画像：/api/v1/personal/persona（对话记忆 PersonaGenerator persona.md）
  *   - 触发：POST /api/v1/personal/extract?layers=L1,L2,L3（经 panel proxy）
  * 全部数据走 personal-space 客户端（与网关 personal 端点对接），agents/layered-refine
  * 引擎已不再是数据源。
@@ -18,7 +18,7 @@
  *   ④ 已沉淀记忆：按来源会话分组的 L1 记忆浏览；
  *   ⑤ 最近运行：源会话提炼状态与产出计数。
  *
- * 数据来源：/api/v1/personal-space/*（经网关 proxy 到 Chat_Memory 管线）。
+ * 数据来源：/api/v1/personal-space/*（经网关 proxy 到对话记忆管线）。
  * 支持 ?session= 预筛选（来自会话洞察「看沉淀」跳转）。
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -37,6 +37,7 @@ import {
   type PersonalScene,
   type PersonalPersonaResponse,
 } from '@/lib/api/personal-space';
+import { MemoryHierarchyView } from '@/pages/MemoryHierarchyView';
 
 const TYPE_COLORS: Record<string, string> = {
   persona: '#534AB7',
@@ -49,7 +50,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 const TYPE_ORDER = ['persona', 'instruction', 'episodic', 'fact', 'preference', 'constraint', 'event'] as const;
 
-type TabKey = 'L1' | 'L2' | 'L3' | 'saved';
+type TabKey = 'L1' | 'L2' | 'L3' | 'saved' | 'hierarchy';
 
 function fmtWhen(s?: string | number): string {
   if (!s) return '';
@@ -110,7 +111,7 @@ export function MyMemoryPage() {
 
   const [tab, setTab] = useState<TabKey>('L1');
 
-  // ── 管道数据（全部来自 Chat_Memory personal 管线）──
+  // ── 管道数据（全部来自对话记忆 personal 管线）──
   const [sourceSessions, setSourceSessions] = useState<SourceSessionRecord[]>([]);
   const [memories, setMemories] = useState<PersonalMemory[]>([]);
   const [scenes, setScenes] = useState<PersonalScene[]>([]);
@@ -464,10 +465,10 @@ export function MyMemoryPage() {
 
       {/* ③ 三层子 Tab */}
       <div style={{ display: 'flex', gap: 6, borderBottom: `1px solid ${C.border}`, marginBottom: 12 }}>
-        {(['L1', 'L2', 'L3', 'saved'] as TabKey[]).map((k) => {
+        {(['L1', 'L2', 'L3', 'saved', 'hierarchy'] as TabKey[]).map((k) => {
           const active = tab === k;
           const label =
-            k === 'L1' ? t('myMemory.tab.l1') : k === 'L2' ? t('myMemory.tab.l2') : k === 'L3' ? t('myMemory.tab.l3') : t('myMemory.tab.saved');
+            k === 'L1' ? t('myMemory.tab.l1') : k === 'L2' ? t('myMemory.tab.l2') : k === 'L3' ? t('myMemory.tab.l3') : k === 'saved' ? t('myMemory.tab.saved') : t('myMemory.tab.hierarchy', { defaultValue: '层级视图' });
           return (
             <button
               key={k}
@@ -490,7 +491,7 @@ export function MyMemoryPage() {
         })}
       </div>
 
-      {/* ── L1 观测（Chat_Memory L1 原子记忆）── */}
+      {/* ── L1 观测（对话记忆 L1 原子记忆）── */}
       {tab === 'L1' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -542,7 +543,7 @@ export function MyMemoryPage() {
         </div>
       )}
 
-      {/* ── L2 场景（Chat_Memory SceneExtractor 场景块）── */}
+      {/* ── L2 场景（对话记忆 SceneExtractor 场景块）── */}
       {tab === 'L2' && (
         <div>
           {scenes.length === 0 ? (
@@ -573,7 +574,7 @@ export function MyMemoryPage() {
         </div>
       )}
 
-      {/* ── L3 画像（Chat_Memory PersonaGenerator persona.md）── */}
+      {/* ── L3 画像（对话记忆 PersonaGenerator persona.md）── */}
       {tab === 'L3' && (
         <div>
           {!persona?.persona ? (
@@ -716,6 +717,17 @@ export function MyMemoryPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── 层级视图（L0→L1→L2→L3 整体蒸馏结构可视化）── */}
+      {tab === 'hierarchy' && (
+        <MemoryHierarchyView
+          sourceSessions={sourceSessions}
+          memories={memories}
+          scenes={scenes}
+          persona={persona}
+          titleBySid={titleBySid}
+        />
       )}
 
       {/* ⑤ 最近运行 */}

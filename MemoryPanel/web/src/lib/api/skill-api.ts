@@ -383,6 +383,12 @@ export interface ExtractParams {
   }>;
   reason?: string;
   options?: { max_iterations?: number };
+  /**
+   * 显式导入即共享：传 'team' 时抽取落库的 skill asset 直接置团队共享
+   * （面板技能页「团队资产」tab 只显示 visibility=team 的技能，不传则
+   * 落 private 默认、导入成功也看不到 —— 2026-10-15 实测反馈）。
+   */
+  visibility?: 'team' | 'private';
 }
 
 /**

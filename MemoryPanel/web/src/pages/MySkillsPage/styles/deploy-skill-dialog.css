@@ -1,0 +1,175 @@
+/**
+ * DeploySkillDialog 样式（浅色主题，对齐 tea-component / import-from-insight-dialog）。
+ */
+
+._memory-dsd-hint {
+  font-size: 12px;
+  color: var(--tea-color-text-tertiary);
+  margin-top: 12px;
+}
+
+._memory-dsd-warn {
+  margin-top: 12px;
+}
+
+._memory-dsd-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--tea-color-border, #e5e5e5);
+}
+
+._memory-dsd-selectall {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+._memory-dsd-selectall input {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+._memory-dsd-count {
+  font-size: 12px;
+  color: var(--tea-color-text-secondary);
+}
+
+._memory-dsd-spacer {
+  flex: 1 1 auto;
+}
+
+._memory-dsd-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--tea-color-text-secondary);
+}
+
+._memory-dsd-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+._memory-dsd-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--tea-color-border, #e5e5e5);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: var(--tea-color-bg, #fff);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+._memory-dsd-item--on {
+  border-color: var(--tea-color-primary, #0052d9);
+  background: var(--tea-color-primary-bg, #f2f6ff);
+}
+
+._memory-dsd-item--deployed {
+  opacity: 0.85;
+}
+
+._memory-dsd-item input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+._memory-dsd-item-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+._memory-dsd-item-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--tea-color-text, #333);
+}
+
+._memory-dsd-item-desc {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--tea-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+._memory-dsd-item-path {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 8px;
+  font-family: var(--tea-font-family-mono, 'SFMono-Regular', Menlo, Consolas, monospace);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--tea-color-text-secondary);
+  background: var(--tea-color-bg-secondary, #f7f8fa);
+  border: 1px solid var(--tea-color-border, #e5e5e5);
+  border-radius: 4px;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+._memory-dsd-badge {
+  flex: 0 0 auto;
+  font-size: 11px;
+  line-height: 16px;
+  padding: 0 6px;
+  border-radius: 3px;
+  color: #fff;
+  background: #6c7a89;
+}
+
+._memory-dsd-pill {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 12px;
+  line-height: 18px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+._memory-dsd-pill--pending {
+  color: #8a8a8a;
+  background: #f0f0f0;
+}
+._memory-dsd-pill--running {
+  color: #0052d9;
+  background: #e8f0ff;
+}
+._memory-dsd-pill--success {
+  color: #1a7f37;
+  background: #e7f6ec;
+}
+._memory-dsd-pill--already {
+  color: #6c7a89;
+  background: #eef1f4;
+}
+._memory-dsd-pill--failed {
+  color: #d4380d;
+  background: #fff1ec;
+}
+
+._memory-dsd-footer-summary {
+  font-size: 13px;
+  color: var(--tea-color-text-secondary);
+}

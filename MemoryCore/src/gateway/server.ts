@@ -1835,9 +1835,11 @@ export class TdaiGateway {
       const llmRunner = new StandaloneLLMRunner({ config: baseRunnerConfig, logger: this.logger });
       // L2/L3 的 SceneExtractor / PersonaGenerator 需要工具调用能力，单独建一个
       // enableTools=true 的 runner（L1 不需要工具，沿用 base runner 即可）。
+      // ⚠️ enableTools 是构造函数顶层选项，不是 StandaloneLLMConfig 的字段——
+      // 写进 config 会被静默忽略（runner 退化成无工具纯文本，L2/L3 全部空转）。
       const wantsL2L3 = Array.isArray(body.layers) && (body.layers.includes("L2") || body.layers.includes("L3"));
       const llmRunnerTools: import("../adapters/standalone/llm-runner.js").StandaloneLLMRunner | undefined = wantsL2L3
-        ? new StandaloneLLMRunner({ config: { ...baseRunnerConfig, enableTools: true }, logger: this.logger })
+        ? new StandaloneLLMRunner({ config: baseRunnerConfig, enableTools: true, logger: this.logger })
         : undefined;
 
       // 2) 读取源会话消息（复用 agents/personal-space 引擎，单一 IO 入口）
@@ -1985,7 +1987,7 @@ export class TdaiGateway {
   /**
    * 读取 personal 空间的 L2（场景块 / scene blocks）。
    *
-   * 数据源与 Chat_Memory 的 SceneExtractor 落盘一致：
+   * 数据源与对话记忆的 SceneExtractor 落盘一致：
    *   dataDir/profiles/<encoded personal scope>/scene_blocks/*.md
    * 经 listLocalProfiles（type:"l2"）归一并返回 filename / summary / 正文 / 时间戳。
    */
@@ -2018,7 +2020,7 @@ export class TdaiGateway {
   /**
    * 读取 personal 空间的 L3（长期画像 persona.md）。
    *
-   * 数据源与 Chat_Memory 的 PersonaGenerator 落盘一致：
+   * 数据源与对话记忆的 PersonaGenerator 落盘一致：
    *   dataDir/profiles/<encoded personal scope>/persona.md
    * 经 listLocalProfiles（type:"l3"）读取正文。
    */

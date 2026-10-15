@@ -337,6 +337,42 @@ export const atomicDeleteRequestSchema = z.object({
 export type AtomicDeleteRequest = z.infer<typeof atomicDeleteRequestSchema>;
 
 // ============================
+// Override: atomic add（L1 记录直写 · 「从我的记忆中导入」数据面）
+// ============================
+
+/** 单次导入上限：与 conversation/add 的 100 条对齐。 */
+export const ATOMIC_ADD_RECORDS_MAX = 100;
+
+/**
+ * atomic/add：把**已成形的 L1 原子记忆**直接写入指定 (team, agent, user)。
+ *
+ * 与 atomic/update 的分工：update 只能覆盖**已有记录主键**的内容（404 if not
+ * found）；add 由服务端生成新主键插入，供「从我的记忆中导入」这类"把别处沉淀的
+ * 记忆搬进本 agent 记忆池"的场景使用。IdFields（team_id / agent_id / user_id）
+ * 不在此 schema 校验——由 dispatch 层 resolveIsolation 统一从 body / header 解析，
+ * /v3 另有 collectV3Missing 强校验。
+ */
+export const atomicAddRecordSchema = z.object({
+  content: z.string().min(1).max(8192),
+  /** 保留来源记忆的类型字符串（含 legacy 的 fact / preference / constraint / event）。 */
+  type: z.string().min(1).max(40),
+  priority: z.number().int().min(-1).max(100).optional(),
+  scene_name: z.string().max(200).optional(),
+});
+export type AtomicAddRecord = z.infer<typeof atomicAddRecordSchema>;
+
+export const atomicAddRequestSchema = z.object({
+  records: z.array(atomicAddRecordSchema).min(1).max(ATOMIC_ADD_RECORDS_MAX),
+});
+export type AtomicAddRequest = z.infer<typeof atomicAddRequestSchema>;
+
+export interface AtomicAddData {
+  /** 新写入的 L1 记录主键（与 records 同序）。 */
+  ids: string[];
+  added_count: number;
+}
+
+// ============================
 // Tenancy isolation extension
 // ============================
 //

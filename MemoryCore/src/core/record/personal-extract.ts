@@ -219,7 +219,7 @@ export interface PersonalL3RunParams {
 
 /**
  * Drive the production L2 (scene) runner for a personal `sessionKey`. Reuses the
- * Chat_Memory SceneExtractor, which groups L1 records by isolation scope and
+ * Chat Memory SceneExtractor, which groups L1 records by isolation scope and
  * writes scene blocks into `dataDir/profiles/<encoded personal scope>/scene_blocks`.
  *
  * Returns the number of scene blocks written. Requires an `enableTools=true`
@@ -325,7 +325,7 @@ export interface ExtractPersonalSourceParams extends PersonalL0WriteParams {
 
 /**
  * Orchestrate a personal extraction for one source session: ingest the tail of a
- * conversation as personal L0, then run the requested layers of the Chat_Memory
+ * conversation as personal L0, then run the requested layers of the Chat Memory
  * pipeline (L1 → L2 → L3). Returns per-layer counts.
  *
  * `startIndex` lets the caller feed only NEW messages (incremental), while the L1

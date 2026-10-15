@@ -28,6 +28,7 @@ const PATH_TO_PAGE: Record<string, PageId> = {
   '/my-memory': 'personal_memory',
   '/layered-refine': 'layered_refine',
   '/personal/skills': 'personal_skills',
+  '/personal/local-skills': 'personal_local_skills',
   '/analytics': 'analytics',
   '/team/members': 'team_members',
   '/team/agents': 'team_agents',
@@ -51,6 +52,7 @@ function legacyHashToPath(): string | null {
   if (leaf === 'my-memory' || leaf === 'personal_memory' || leaf === 'my_memory') return '/my-memory';
   if (leaf === 'layered-refine' || leaf === 'layered_refine' || leaf === 'layeredrefine') return '/layered-refine';
   if (leaf === 'personal-skills' || leaf === 'personal_skills' || leaf === 'myskills' || leaf === 'my-skills') return '/personal/skills';
+  if (leaf === 'local-skills' || leaf === 'local_skills' || leaf === 'localAgentSkills' || leaf === 'local-agent-skills') return '/personal/local-skills';
   if (leaf === 'agents' || leaf === 'team_agents') return '/team/agents';
   if (leaf === 'team' || leaf === 'members' || leaf === 'team_members') return '/team/members';
   if (leaf === 'api_keys' || leaf === 'apikey' || leaf === 'api-keys') return '/team/api-keys';

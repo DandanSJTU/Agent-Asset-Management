@@ -7,9 +7,15 @@ import { useTranslation } from 'react-i18next';
 import { useAgents, useTeams } from '@/services';
 import { readAuth } from '@/components/LoginGate';
 import { tea, confirmThenRun } from '@/lib/tea-bridge';
-import { chatMemoryApi, type ChatMemoryBlock, type ChatMemorySearchHit } from '@/lib/teamApi';
+import type { ChatMemoryBlock, ChatMemorySearchHit } from '@/lib/teamApi';
 import { type MemoryBlock, type MemoryLayer, type ScopeTab } from '../constants/types';
 import { useScopeTabLabels } from '../constants/constants';
+import {
+  getChatMemoryApi,
+  isDemoMode,
+  persistDemoMode,
+  type ChatMemoryApiLike,
+} from '../mock/mockApi';
 import {
   buildInitialLayerCounts,
   defaultTimeRange,
@@ -19,6 +25,9 @@ import {
   type TimeRange,
 } from '../utils/memory-utils';
 import { getLayerCount } from '../utils/utils';
+
+/** 「从我的记忆中导入」单批上限：与面板 import-records / 内核 atomic/add 对齐（100 条）。 */
+const IMPORT_RECORDS_CHUNK = 100;
 
 export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
   const { t } = useTranslation();
@@ -56,6 +65,10 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
   const [rangeTooLarge, setRangeTooLarge] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showAllocate, setShowAllocate] = useState(false);
+  // 演示模式：用 mock 数据驱动整个 tab（URL `?demo=1` 或 localStorage 标记）。
+  // api 在 demo / 真实之间切换，hook 内所有 chatMemoryApi 调用统一走 api。
+  const [demoMode, setDemoModeState] = useState<boolean>(() => isDemoMode());
+  const api: ChatMemoryApiLike = getChatMemoryApi(demoMode);
   // 默认展示团队资产（team）。「Agent 资产」（fixed）入口已隐藏，仅保留 team 视角。
   const [scopeTab, setScopeTab] = useState<ScopeTab>('team');
   const [agentFilter, setAgentFilter] = useState<string>('');
@@ -85,13 +98,14 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
   const l0AutoExpandCountRef = useRef(0);
 
   const fetchBlocks = useCallback(async () => {
-    if (!activeTeamId) {
+    // 演示模式下不需要真实 team / agent 上下文，直接用 mock 数据驱动。
+    if (!demoMode && !activeTeamId) {
       setBlocks([]);
       setBlocksLoading(false);
       return;
     }
-    // fixed tab 没选 agent 时不发请求，但要确保 loading 关闭
-    if (scopeTab === 'fixed' && !agentFilter) {
+    // fixed tab 没选 agent 时不发请求，但要确保 loading 关闭（演示模式下默认 team tab，不走此分支）
+    if (!demoMode && scopeTab === 'fixed' && !agentFilter) {
       setBlocks([]);
       setBlocksLoading(false);
       return;
@@ -109,10 +123,10 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     }
     try {
       let res: { items: ChatMemoryBlock[]; total?: number };
-      if (scopeTab === 'fixed') {
-        res = await chatMemoryApi.agentFixed(agentFilter);
+      if (scopeTab === 'fixed' && !demoMode) {
+        res = await api.agentFixed(agentFilter);
       } else {
-        res = await chatMemoryApi.teamAssets(activeTeamId);
+        res = await api.teamAssets(activeTeamId ?? 'demo');
       }
       if (seq !== fetchSeqRef.current) return; // 已被后续请求取代
       const mapped: MemoryBlock[] = res.items.map((b) => ({
@@ -143,7 +157,17 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     // 注：不再在这里 setSelectedId —— 之前 fetchBlocks 的 useCallback 依赖
     // 了 selectedId，导致每次选中一个 block 都重新 fetch 整个列表（卡顿主因）。
     // 默认选中的逻辑改由下方独立 effect 处理。
-  }, [activeTeamId, scopeTab, agentFilter, t]);
+  }, [demoMode, activeTeamId, scopeTab, agentFilter, api, t]);
+
+  /** 切换演示模式：持久化到 localStorage 并重新拉取（mock / 真实）。 */
+  const setDemoMode = useCallback(
+    (value: boolean) => {
+      persistDemoMode(value);
+      setDemoModeState(value);
+      void fetchBlocks();
+    },
+    [fetchBlocks],
+  );
 
   // 触发 fetchBlocks：依赖原始参数 + fetchBlocks，并用 key 去重防止短时间内重复触发。
   // 之前直接 `useEffect(() => fetchBlocks(), [fetchBlocks])` 会因 fetchBlocks 引用变化
@@ -203,7 +227,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
       // 已经有真实计数的层不重复请求；手动刷新时强制重拉。
       if (!forceRefresh && selected.layerCounts[l] !== undefined) return;
 
-      chatMemoryApi
+      api
         .layer(blockId, l, 1, 0)
         .then((res) => {
           if (seq !== layerCountSeqRef.current) return; // 已被后续选中取代
@@ -217,7 +241,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
           // 单层计数失败不阻断其他层，静默忽略
         });
     });
-  }, [selected?.id, refreshNonce]);
+  }, [selected?.id, refreshNonce, api]);
 
   // 切换记忆块时，时间筛选器重置为默认「前一天 ~ 当前」（业务确认：每次打开都重置）
   useEffect(() => {
@@ -241,7 +265,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     const useTimeFilter = layer === 'L0' || layer === 'L1';
     const timeStart = useTimeFilter ? timeRange.start || undefined : undefined;
     const timeEnd = useTimeFilter ? timeRange.end || undefined : undefined;
-    chatMemoryApi
+    api
       .layer(
         selected.id,
         layer,
@@ -303,7 +327,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     return () => {
       cancelled = true;
     };
-  }, [selected?.id, layer, layerPage, pageSize, timeRange.start, timeRange.end, refreshNonce, t]);
+  }, [selected?.id, layer, layerPage, pageSize, timeRange.start, timeRange.end, refreshNonce, t, api]);
 
   const handleLayerPageChange = useCallback(
     (nextPage: number) => {
@@ -337,7 +361,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
       // beforeTs 有值时 offset 传 0（后端按 time_end 过滤）；首屏无 beforeTs 时走 offset=0。
       // 透传 timeStart 时间下界：加载更早消息不能越出用户设定的筛选范围，与首屏保持一致。
       const timeStart = timeRange.start || undefined;
-      const res = await chatMemoryApi.layer(
+      const res = await api.layer(
         selected.id,
         'L0',
         pageSize,
@@ -379,7 +403,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     } finally {
       setL0MoreLoading(false);
     }
-  }, [selected, layer, l0MoreLoading, pageSize, timeRange.start, t]);
+  }, [selected, layer, l0MoreLoading, pageSize, timeRange.start, t, api]);
 
   const handleLayerItemLoad = useCallback(
     async (itemId: string) => {
@@ -405,7 +429,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
       }
       setLayerItemLoadingId(itemId);
       try {
-        const res = await chatMemoryApi.layer(selected.id, 'L2', 1, 0, itemId);
+        const res = await api.layer(selected.id, 'L2', 1, 0, itemId);
         const loaded = res.items[0] ? mapLayerItem(res.items[0]) : null;
         if (!loaded) return;
         setBlocks((prev) =>
@@ -426,7 +450,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
         setLayerItemLoadingId(null);
       }
     },
-    [selected?.id, selected?.layers.L2, layer, t],
+    [selected?.id, selected?.layers.L2, layer, t, api],
   );
 
   // ── 编辑：保存单层内容（Owner-only；成功后乐观更新对应条目 body） ──
@@ -435,7 +459,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
   const handleSaveLayerItem = useCallback(
     async (targetLayer: 'L1' | 'L2' | 'L3', itemId: string, content: string) => {
       if (!selected?.id) return;
-      await chatMemoryApi.updateLayer(selected.id, targetLayer, {
+      await api.updateLayer(selected.id, targetLayer, {
         id: itemId,
         content,
       });
@@ -455,7 +479,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
       );
       tea.notify.success(t('memory.notify.editSuccess'));
     },
-    [selected?.id, t],
+    [selected?.id, t, api],
   );
 
   // ── 搜索：L0（对话）/ L1（原子记忆）语义 / 关键字检索 ──
@@ -464,10 +488,10 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
   const searchLayer = useCallback(
     async (targetLayer: 'L0' | 'L1', query: string): Promise<ChatMemorySearchHit[]> => {
       if (!selected?.id) return [];
-      const res = await chatMemoryApi.searchLayer(selected.id, targetLayer, query, 30);
+      const res = await api.searchLayer(selected.id, targetLayer, query, 30);
       return res.items ?? [];
     },
-    [selected?.id],
+    [selected?.id, api],
   );
 
   // ── 过滤与辅助 ──
@@ -529,7 +553,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
         okText: t('memory.confirm.unbind.ok'),
       },
       async () => {
-        await chatMemoryApi.unbind(teamId, id, agentId);
+        await api.unbind(teamId, id, agentId);
         setBlocks((prev) => prev.filter((b) => b.id !== id));
         if (selectedId === id) setSelectedId(null);
         tea.notify.success(t('memory.notify.unbound'));
@@ -541,19 +565,53 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
   async function handleImport({
     agent_id,
     messages,
+    records,
   }: {
     agent_id: string;
-    messages: Array<{ role: string; content: string }>;
+    messages?: Array<{ role: string; content: string }>;
+    /** 「从我的记忆中导入」的个人 L1 原子记忆（直接落 L1，不走 L0 蒸馏） */
+    records?: Array<{ content: string; type: string; priority?: number; scene_name?: string }>;
   }) {
     try {
       if (!activeTeamId || !agent_id) {
         tea.notify.warning(t('memory.notify.selectAgent'));
         return;
       }
-      await chatMemoryApi.import({ teamId: activeTeamId, agentId: agent_id, messages });
+      // 导入目标记忆块的 id（与面板 /chat-memory/import-records 的 block_id 一致）
+      const targetBlockId = `chat_memory-${activeTeamId}-${agent_id}`;
+      // 成功导入后自动聚焦目标块并切到落点层，让刚导入的记忆立即可见：
+      // - records（从我的记忆中导入）同步直写 L1 → 切 L1
+      // - messages（粘贴/上传）异步经 L0 蒸馏，但 L0 立即落库 → 切 L0
+      // 必须先 await fetchBlocks() 再 setSelectedId：列表清空→重填的瞬间若先设 selectedId，
+      // 「选中块不在列表中则清空」的 effect 会把选中清掉，导致聚焦失败。
+      const focusImportedBlock = async (focusLayer: MemoryLayer) => {
+        await fetchBlocks();
+        setLayer(focusLayer);
+        setSelectedId(targetBlockId);
+        setTimeRange(defaultTimeRange());
+        setRefreshNonce((n) => n + 1);
+      };
+      if (records && records.length > 0) {
+        // 面板 /chat-memory/import-records 与内核 atomic/add 单次上限 100 条，超出自动分批
+        let imported = 0;
+        for (let i = 0; i < records.length; i += IMPORT_RECORDS_CHUNK) {
+          const chunk = records.slice(i, i + IMPORT_RECORDS_CHUNK);
+          await api.importRecords({ teamId: activeTeamId, agentId: agent_id, records: chunk });
+          imported += chunk.length;
+        }
+        tea.notify.success(t('memory.notify.importRecordsSuccess', { count: imported }));
+        setShowImport(false);
+        await focusImportedBlock('L1');
+        return;
+      }
+      if (!messages) {
+        tea.notify.warning(t('memory.notify.selectAgent'));
+        return;
+      }
+      await api.import({ teamId: activeTeamId, agentId: agent_id, messages });
       tea.notify.success(t('memory.notify.importSuccess', { count: messages.length }));
       setShowImport(false);
-      fetchBlocks();
+      await focusImportedBlock('L0');
     } catch (e: unknown) {
       tea.notify.error((e instanceof Error ? e.message : String(e)) || t('memory.notify.importFailed'));
     }
@@ -574,7 +632,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
       if (!ok) return;
     }
     try {
-      await chatMemoryApi.patchScope(block.id, newScope);
+      await api.patchScope(block.id, newScope);
       tea.notify.success(
         newScope === 'team' ? t('memory.notify.scopeTeam') : t('memory.notify.scopePrivate'),
       );
@@ -633,6 +691,10 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     setScopeTab,
     agentFilter,
     setAgentFilter,
+    // demo
+    demoMode,
+    setDemoMode,
+    api,
     // computed
     selected,
     layerPage,

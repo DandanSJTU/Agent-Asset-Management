@@ -162,6 +162,25 @@ export const chatMemoryApi = {
       session_id: params.sessionId,
     }),
 
+  /** 从「我的记忆」导入 L1 原子记忆到 agent 记忆池（走 /v3/atomic/add，服务端生成新主键）。
+   *  个人空间已蒸馏过，直接落 L1，不重复走 LLM 蒸馏。 */
+  importRecords: (params: {
+    teamId: string;
+    agentId: string;
+    records: Array<{ content: string; type: string; priority?: number; scene_name?: string }>;
+  }) =>
+    chatMemoryCall<{
+      imported: boolean;
+      block_id: string;
+      session_id: string;
+      added_count: number;
+      ids: string[];
+    }>('import-records', {
+      team_id: params.teamId,
+      agent_id: params.agentId,
+      records: params.records,
+    }),
+
   /** 编辑单层记忆内容（Owner-only）：
    *  L1 传 id=记录主键 + content；L2 传 id=文件路径 + content（可选 summary）；
    *  L3 只传 content（整份 core persona 覆盖写）。 */

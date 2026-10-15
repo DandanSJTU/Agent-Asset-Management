@@ -27,6 +27,7 @@ import type { PipelineWorker } from "../services/pipeline-worker.js";
 import { executeMemorySearch } from "../core/tools/memory-search.js";
 import { executeConversationSearch } from "../core/tools/conversation-search.js";
 import type { MemoryRecord } from "../core/record/l1-writer.js";
+import { generateMemoryId } from "../core/record/l1-writer.js";
 import { reportRecallMetrics } from "../core/report/metric-tracking-recall.js";
 
 // ── Zod schemas (validated types + defaults) ──
@@ -37,6 +38,7 @@ import {
   conversationDeleteRequestSchema,
   conversationCountRequestSchema,
   atomicUpdateRequestSchema,
+  atomicAddRequestSchema,
   atomicQueryRequestSchema,
   atomicSearchRequestSchema,
   atomicDeleteRequestSchema,
@@ -77,6 +79,7 @@ import {
   type CountData,
   type AtomicDetail,
   type AtomicUpdateData,
+  type AtomicAddData,
   type AtomicQueryData,
   type AtomicSearchData,
   type AtomicSearchHit,
@@ -157,6 +160,7 @@ const V3_ALLOWED_SUBPATHS = new Set<string>([
   "/conversation/delete",
   "/conversation/count",
   "/atomic/update",
+  "/atomic/add",
   "/atomic/query",
   "/atomic/search",
   "/atomic/delete",
@@ -417,6 +421,7 @@ const DATAPLANE_HANDLERS: Record<string, RouteHandler> = {
   "/conversation/delete": handleConversationDelete,
   "/conversation/count": handleConversationCount,
   "/atomic/update": handleAtomicUpdate,
+  "/atomic/add": handleAtomicAdd,
   "/atomic/query": handleAtomicQuery,
   "/atomic/search": handleAtomicSearch,
   "/atomic/delete": handleAtomicDelete,
@@ -1120,6 +1125,112 @@ async function handleAtomicUpdate(body: unknown, _auth: V2AuthContext, requestId
   });
 
   return successEnvelope<AtomicUpdateData>({ id, version: `v${updatedVersion}`, updated_at: now }, requestId);
+}
+
+/**
+ * /v3/atomic/add（及 /v2/atomic/add）—— 把已成形的 L1 原子记忆直写目标
+ * (team, agent, user) 记忆池。服务端生成新主键（generateMemoryId），
+ * 调用方不指定 id，避免跨租户主键碰撞。
+ *
+ * 与 conversation/add 的分工：后者写 L0 原文、等 pipeline 事后蒸馏；本接口
+ * 直接落 L1，供「从我的记忆中导入」——个人空间已沉淀的原子记忆搬进团队
+ * agent 池——这类"记忆平移"场景，不重复走 LLM 蒸馏。
+ *
+ * 复用 conversation/add 的三件套：quota 预检、chat_memory 资产自动登记
+ * （失败降级不阻塞）、L1 审计（upsert 语义记 update）。
+ */
+async function handleAtomicAdd(body: unknown, auth: V2AuthContext, requestId: string, deps: V2RouterDeps): Promise<ApiResponseEnvelope> {
+  const parsed = atomicAddRequestSchema.safeParse(body);
+  if (!parsed.success) return errorEnvelope(400, formatZodError(parsed.error), requestId);
+  const { records } = parsed.data;
+
+  // Enforce three-dim isolation（与 conversation/add 同口径）：enforce 开启且
+  // isolation 缺字段时 422。/v3 另有 collectV3Missing 前置强校验。
+  if (deps.isolationConfig?.enforce && deps.requestIsolationMissing && deps.requestIsolationMissing.length > 0) {
+    return errorEnvelope(
+      422,
+      `Tenancy isolation required: missing ${deps.requestIsolationMissing.join(", ")}. ` +
+      `Provide via request body or x-tdai-{user-id,agent-id,session-id} headers.`,
+      requestId,
+    );
+  }
+  const iso = deps.requestIsolation;
+
+  const store = deps.getStore();
+  if (!store) return errorEnvelope(503, "Store not available", requestId);
+
+  // Quota check: memory limit（与 conversation/add 同口径）
+  if (deps.quotaManager) {
+    const check = await deps.quotaManager.checkMemoryQuota(auth.serviceId, records.length);
+    if (!check.allowed) {
+      return errorEnvelope(4291, `Memory limit exceeded (current=${check.current}, limit=${check.limit})`, requestId);
+    }
+  }
+
+  // 自动登记 chat_memory 资产（team+agent 粒度）：首次触发 create + 绑定，
+  // 后续走进程内 LRU 短路。失败降级只 warn，不阻塞记忆写入。
+  if (deps.getMetadataService && iso?.teamId && iso?.agentId) {
+    try {
+      const metaSvc = await deps.getMetadataService(auth.serviceId);
+      await metaSvc.ensureChatMemoryAsset({
+        team_id: iso.teamId,
+        agent_id: iso.agentId,
+      });
+    } catch (err) {
+      deps.logger.warn(
+        `${TAG} ensureChatMemoryAsset failed (team=${iso.teamId} agent=${iso.agentId}): ` +
+        `${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  const embedding = deps.getEmbedding();
+  const now = new Date().toISOString();
+  const ids: string[] = [];
+
+  for (const rec of records) {
+    const record: MemoryRecord = {
+      // 新主键由服务端生成；sessionKey 打 imported: 前缀便于溯源与 L1 runner 跳过
+      id: generateMemoryId(),
+      content: rec.content,
+      // 保留来源类型字符串（含 legacy fact/preference/constraint/event）
+      type: rec.type as MemoryRecord["type"],
+      priority: rec.priority ?? 50,
+      scene_name: rec.scene_name ?? "",
+      source_message_ids: [],
+      metadata: {},
+      timestamps: [now],
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      sessionKey: iso?.sessionId ? `imported:${iso.sessionId}` : "imported",
+      sessionId: iso?.sessionId ?? "",
+      ...(iso?.taskId ? { taskId: iso.taskId } : {}),
+      teamId: iso?.teamId,
+      userId: iso?.userId,
+      agentId: iso?.agentId,
+    };
+
+    let emb: Float32Array | undefined;
+    if (embedding) {
+      try { emb = await embedding.embed(record.content); } catch (e) { console.warn(`[v2-router] L1 embedding failed:`, e); }
+    }
+    await store.upsertL1(record, emb);
+    ids.push(record.id);
+
+    // 审计：L1 写入按 upsert 语义记 update 一行（store AuditEntry.action 仅支持 update/delete）
+    await recordAudit(store, {
+      record_id: record.id,
+      layer: "L1",
+      action: "update",
+      iso,
+      version: 1,
+      requestId,
+      logger: deps.logger,
+    });
+  }
+
+  return successEnvelope<AtomicAddData>({ ids, added_count: ids.length }, requestId);
 }
 
 async function handleAtomicQuery(body: unknown, _auth: V2AuthContext, requestId: string, deps: V2RouterDeps): Promise<ApiResponseEnvelope> {

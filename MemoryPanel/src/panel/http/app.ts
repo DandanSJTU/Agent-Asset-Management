@@ -8,6 +8,7 @@ import { registerHealthRoutes, registerMetaInstanceRoutes } from './routes/meta/
 import { registerMetaProxyRoutes } from './routes/meta/proxy.js';
 import { registerSkillProxyRoutes } from './routes/skill/proxy.js';
 import { registerPersonalSkillRoutes } from './routes/personal-skills.js';
+import { registerLocalAgentSkillRoutes } from './routes/local-agent-skills.js';
 import { registerAnalyticsProxyRoutes } from './routes/analytics/proxy.js';
 import { registerChatMemoryRoutes } from './routes/chat-memory.js';
 import { registerTaskRoutes } from './routes/task.js';
@@ -39,6 +40,8 @@ export function buildPanelApp(deps: PanelDeps): Hono {
   registerSkillProxyRoutes(api, deps);
   // 个人技能库代理：/api/v1/personal-skills/* → 内核 /v3/skill/*（服务端注入 personal scope 身份）
   registerPersonalSkillRoutes(api, deps);
+  // 本地 Agent 技能浏览器：只读扫描本机各 agent 的 skill 目录（「我的技能 → 本地 Agent 技能」）
+  registerLocalAgentSkillRoutes(api, deps);
   // Analytics 查询面透明代理：/api/v1/analytics/* → 内核 /v3/analytics/*
   registerAnalyticsProxyRoutes(api, deps);
   // Chat Memory 面板 3-tab 专属业务路由（12.3 决策例外，见 chat-memory.ts 顶注释）

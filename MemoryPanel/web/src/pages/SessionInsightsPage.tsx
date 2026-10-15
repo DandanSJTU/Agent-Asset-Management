@@ -1542,75 +1542,53 @@ function TableView({
           {arrow('cost')}
           {arrow('tokens')}
         </span>
-        <span className="sim-c6 sim-precip-head">{t('insights.precip.col')}</span>
       </div>
-      {rows.map((s) => {
-        const rec = sourceMap.get(sourceMapKey(s.vendor, s.sessionId));
-        const pending = pendingBySession[s.sessionId] ?? null;
-        const precip = precipOf(s, rec, pending);
-        const ext = extractabilityOf(s, t);
-        const btn = extractButtonOf(precip, ext);
-        return (
-          <div
-            key={s.sessionId}
-            className={`sim-tr${selectedId === s.sessionId ? ' sel' : ''}`}
-            onClick={() => onSelect(s.sessionId)}
-            title={s.sessionId}
-            role="button"
-            tabIndex={0}
-            aria-selected={selectedId === s.sessionId}
-            aria-label={sessionTitle(s, parentTitleOf(s))}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onSelect(s.sessionId);
-              }
-            }}
-          >
-            <span className="sim-c1">
-              <span className="sim-t1">
-                <Highlight text={sessionTitle(s, parentTitleOf(s))} terms={terms} />
-              </span>
-              {s.title && s.firstPrompt && (
-                <span className="sim-t2">
-                  <Highlight text={s.firstPrompt} terms={terms} />
-                </span>
-              )}
+      {rows.map((s) => (
+        <div
+          key={s.sessionId}
+          className={`sim-tr${selectedId === s.sessionId ? ' sel' : ''}`}
+          onClick={() => onSelect(s.sessionId)}
+          title={s.sessionId}
+          role="button"
+          tabIndex={0}
+          aria-selected={selectedId === s.sessionId}
+          aria-label={sessionTitle(s, parentTitleOf(s))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onSelect(s.sessionId);
+            }
+          }}
+        >
+          <span className="sim-c1">
+            <span className="sim-t1">
+              <Highlight text={sessionTitle(s, parentTitleOf(s))} terms={terms} />
             </span>
-            <span className="sim-c2">
+            {s.title && s.firstPrompt && (
               <span className="sim-t2">
-                {repoOf(s.sessionId)} · {s.vendor}
+                <Highlight text={s.firstPrompt} terms={terms} />
               </span>
+            )}
+          </span>
+          <span className="sim-c2">
+            <span className="sim-t2">
+              {repoOf(s.sessionId)} · {s.vendor}
             </span>
-            <span className="sim-c3 sim-st">
-              <span className="sim-sdot" style={{ background: stateColor(s.state) }} />
-              {s.state}
+          </span>
+          <span className="sim-c3 sim-st">
+            <span className="sim-sdot" style={{ background: stateColor(s.state) }} />
+            {s.state}
+          </span>
+          <span className="sim-c4 sim-t2">{fmtRel(s.mtime, t)}</span>
+          <span className="sim-c5 sim-cost">
+            {fmtCost(s.costUsd, s.costEstimated)}
+            {s.costEstimated ? ' ~' : ''}
+            <span>
+              {fmtCompact(s.tokens.total)} tok · {fmtInt(s.recordCount)} {t('insights.col.records')}
             </span>
-            <span className="sim-c4 sim-t2">{fmtRel(s.mtime, t)}</span>
-            <span className="sim-c5 sim-cost">
-              {fmtCost(s.costUsd, s.costEstimated)}
-              {s.costEstimated ? ' ~' : ''}
-              <span>
-                {fmtCompact(s.tokens.total)} tok · {fmtInt(s.recordCount)} {t('insights.col.records')}
-              </span>
-            </span>
-            <span className="sim-c6 sim-precip">
-              <PrecipBadge precip={precip} t={t} />
-              <Button
-                type="primary"
-                disabled={btn.disabled}
-                title={btn.tooltipKey ? t(btn.tooltipKey) : undefined}
-                onClick={(e) => {
-                  e?.stopPropagation();
-                  if (!btn.disabled) onExtract(s);
-                }}
-              >
-                {t(btn.labelKey, btn.labelParams)}
-              </Button>
-            </span>
-          </div>
-        );
-      })}
+          </span>
+        </div>
+      ))}
       {remaining > 0 && (
         <div className="sim-more" onClick={onMore}>
           {t('insights.more', { n: remaining })}
@@ -2220,16 +2198,6 @@ function InspectorPanel({
           ) : (
             <>
               {stale && <div className="sim-stale">⚠ {t('insights.inspector.stale')}</div>}
-              <Section title={t('insights.precip.inspectorTitle')}>
-                <PrecipControl
-                  session={sum}
-                  record={sourceMap.get(sourceMapKey(sum.vendor, sum.sessionId))}
-                  pending={pendingBySession[sum.sessionId] ?? null}
-                  onExtract={() => onRequestExtract(sum)}
-                  onView={() => onGoToMyMemory(sum.sessionId)}
-                  t={t}
-                />
-              </Section>
               <Inspector summary={sum} detail={detail} handoff={handoff} synthesis={synthesis} onOpenDiff={onOpenDiff} />
               {loading && <div className="sim-updating">{t('insights.inspector.updating')}</div>}
             </>

@@ -1134,6 +1134,10 @@ export async function handleExtract(body: unknown, auth: V2AuthContext, requestI
       // strict_mode:true 时落 SkillTaskEntry.mode='strict', Worker 消费时透传给
       // SkillExtractor 用 STRICT prompt。老 client 不传 → 恒走 default (v2 宽松)。
       ...(input.strict_mode === true ? { mode: 'strict' as const } : {}),
+      // 显式导入即共享：body.visibility='team' 时落到 task，sink 消费时对
+      // 新建 skill asset 置 team（不传则保持 private 默认，见 ensureSkillAsset
+      // 2026-07 安全决策）。
+      visibility: input.visibility,
       // 透传 requestId 给 trigger 内部分段 obsLogger 事件用作 anchor
       perfRequestId: requestId,
     });

@@ -257,7 +257,7 @@ export function registerAgentOverviewRoutes(api: Hono, deps: PanelDeps): void {
     // （见本文件下方 memory-block 构造：默认 'private'），根本不会被 visibility='team'
     // 查询命中；只有用户主动共享后才变 team —— 而这正是应允许其它 agent 绑定的场景。
     // 旧的前缀过滤会把这类「已共享的 agent 记忆」一并误杀，导致新建 Agent 时选不到、
-    // 绑不上团队共享 memory（与 Chat_Memory 页「团队资产」tab 展示不一致）。
+    // 绑不上团队共享 memory（与对话记忆页「团队资产」tab 展示不一致）。
     // 「当前 agent 自己的 self memory 默认绑定、不可解绑」由前端按 selfChatMemoryId 处理，
     // 与团队级资产池无关。
     const chatTeamAssets =

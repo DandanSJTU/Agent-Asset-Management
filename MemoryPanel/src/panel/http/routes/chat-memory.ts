@@ -17,7 +17,7 @@
  *   数据面层（/layer、/import）走 `deps.kernelHttp.postEnvelope('/v3/...', body, cred)`。
  *   面板层职责：拼装 caller header、聚合多次调用、权限/类型/借入 ≤ 2 校验。
  *
- * 12 endpoints（与前端 web/src/components/ChatMemoryPanel.tsx 3 tab 对应）：
+ * 13 endpoints（与前端 web/src/components/ChatMemoryPanel.tsx 3 tab 对应）：
  *   POST /chat-memory/team-assets     团队 tab（visibility=team 且非 me owner）
  *   POST /chat-memory/agent-fixed     固定资产 tab（选中 agent 的 fixed_assets）
  *   POST /chat-memory/my-agents       我的资产分配 tab（我 owner 的 agent 列表）
@@ -30,6 +30,7 @@
  *   POST /chat-memory/layer-delete    L0/L1 列表批量删除（Owner-only）
  *   POST /chat-memory/clear           一键清空内容、保留资产（Owner-only）
  *   POST /chat-memory/import          导入历史对话到 agent 的 L0
+ *   POST /chat-memory/import-records  从「我的记忆」导入 L1 原子记忆（Owner-only）
  */
 import type { Hono } from "hono";
 import { validatePanelMetaHeaders } from "../middleware/validate-panel-headers.js";
@@ -572,6 +573,125 @@ export function registerChatMemoryRoutes(api: Hono, deps: PanelDeps): void {
         block_id: `chat_memory-${teamId}-${agentId}`,
         session_id: sessionId,
         accepted_count: acceptedCount,
+      }),
+    );
+  });
+
+  // ── 4.11 从「我的记忆」导入 L1 原子记忆到 agent 记忆池 ──────────────────
+  //
+  // POST /chat-memory/import-records
+  //   body: { team_id, agent_id, records: [{content, type, priority?, scene_name?}] }
+  //
+  // 语义：把个人空间（「我的记忆」页）已沉淀的 L1 原子记忆**平移**进选定 agent
+  // 的团队记忆池 L1 层。与 4.10 import 的分工：
+  //   - 4.10 import：写 L0 对话原文，等 tdai pipeline 事后蒸馏 L1/L2/L3；
+  //   - 本接口：直接落 L1（内核 /v3/atomic/add 服务端生成新主键），个人空间
+  //     已经蒸馏过一遍，不重复走 LLM。
+  // **不建新 asset** —— 复用该 agent 已自动登记的 chat_memory asset。
+  //
+  // 权限：agent.owner = me（与 4.10 import 一致）
+  //
+  // 上限与内核 ATOMIC_ADD_RECORDS_MAX 对齐（100 条/次）。
+  api.post("/chat-memory/import-records", validatePanelMetaHeaders(deps), async (c) => {
+    const ctx = buildCtx(c);
+    const body = await readJson(c);
+    const teamId = requiredTeamId(body);
+    const agentId = typeof body?.agent_id === "string" ? body.agent_id : "";
+    const rawRecords = body?.records;
+    if (!teamId) return respondControlError(c, 400, "MISSING_TEAM_ID");
+    if (!agentId) return respondControlError(c, 400, "MISSING_AGENT_ID");
+    if (!Array.isArray(rawRecords) || rawRecords.length === 0) {
+      return respondControlError(c, 400, "MISSING_RECORDS");
+    }
+    if (rawRecords.length > MAX_IMPORT_RECORDS) {
+      return respondControlError(c, 400, "TOO_MANY_RECORDS");
+    }
+
+    // 规范化 records（content/type 必填；priority/scene_name 可选透传）
+    interface ImportRecord {
+      content: string;
+      type: string;
+      priority?: number;
+      scene_name?: string;
+    }
+    const records: ImportRecord[] = [];
+    for (const [i, raw] of rawRecords.entries()) {
+      if (!raw || typeof raw !== "object") {
+        return respondControlError(c, 400, `INVALID_RECORD at ${i}`);
+      }
+      const r = raw as Record<string, unknown>;
+      const content = typeof r.content === "string" ? r.content : "";
+      if (!content.trim() || content.length > 8192) {
+        return respondControlError(c, 400, `INVALID_RECORD_CONTENT at ${i}`);
+      }
+      const type = typeof r.type === "string" && r.type.trim() ? r.type.trim() : "fact";
+      const priority =
+        typeof r.priority === "number" && Number.isFinite(r.priority)
+          ? Math.floor(r.priority)
+          : undefined;
+      const sceneName =
+        typeof r.scene_name === "string" && r.scene_name.trim()
+          ? r.scene_name.trim()
+          : undefined;
+      records.push({
+        content,
+        type,
+        ...(priority !== undefined ? { priority } : {}),
+        ...(sceneName ? { scene_name: sceneName } : {}),
+      });
+    }
+
+    // 权限：agent.owner = me（与 4.10 import 同口径）
+    const meUserId = await resolveCallerUserId(deps, ctx);
+    if (!meUserId) return respondControlError(c, 401, "INVALID_USER_KEY");
+    c.set('resolvedUserId', meUserId);
+    if (ctx.userKey) deps.userIdResolver.warm(ctx.userKey, meUserId, ctx.instanceId);
+    const agentEnv = await deps.metaKernel.invoke(
+      "agent/get",
+      { agent_id: agentId },
+      ctx,
+    );
+    if (agentEnv.code === 404 || (agentEnv.code === 0 && !agentEnv.data)) {
+      return respondControlError(c, 404, "AGENT_NOT_FOUND");
+    }
+    if (agentEnv.code !== 0) return respondEnvelope(c, agentEnv);
+    const agent = agentEnv.data as AgentRaw;
+    if (agent.team_id !== teamId)
+      return respondControlError(c, 400, "AGENT_NOT_IN_TEAM");
+    if (agent.owner_user_id !== meUserId)
+      return respondControlError(c, 403, "NOT_YOUR_AGENT");
+
+    // session_id 兜底：生成一个 imported-{ts}（与 4.10 import 一致，
+    // 便于按 session 溯源这批平移进来的记忆）
+    const sessionId = `imported-${Date.now().toString(36)}`;
+
+    // 走数据面 /v3/atomic/add；user_id 用 agent.owner_user_id（数据面按 owner 隔离）
+    const cred = toKernelCredentials(ctx, { timeoutMs: 30_000 });
+    const addEnv = await deps.kernelHttp.postEnvelope<{
+      ids?: string[];
+      added_count?: number;
+    }>(
+      "/v3/atomic/add",
+      {
+        team_id: teamId,
+        agent_id: agentId,
+        user_id: agent.owner_user_id,
+        session_id: sessionId,
+        records,
+      },
+      cred,
+    );
+    if (addEnv.code !== 0) return respondEnvelope(c, addEnv);
+    const addData = addEnv.data as { ids?: string[]; added_count?: number } | null;
+
+    return respondEnvelope(
+      c,
+      okEnvelope(c, {
+        imported: true,
+        block_id: `chat_memory-${teamId}-${agentId}`,
+        session_id: sessionId,
+        added_count: addData?.added_count ?? records.length,
+        ids: addData?.ids ?? [],
       }),
     );
   });
@@ -1864,6 +1984,8 @@ function requiredBlockId(body: Record<string, unknown>): string | null {
 // ── 批量删除上限（与内核 MemoryCore/src/gateway/v2-schemas.ts 保持一致）──
 /** /chat-memory/clear 单次可清空的 memory 数。 */
 const MAX_CLEAR_MEMORY_IDS = 100;
+/** /chat-memory/import-records 单次可导入的 L1 记录数（与内核 ATOMIC_ADD_RECORDS_MAX 对齐）。 */
+const MAX_IMPORT_RECORDS = 100;
 /** L0 批量删除：message_ids 上限。 */
 const MAX_L0_DELETE_MESSAGE_IDS = 5000;
 /** L0 批量删除：session_ids 上限。 */

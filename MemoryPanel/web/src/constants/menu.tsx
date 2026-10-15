@@ -29,7 +29,8 @@ export type PageId =
   | 'personal_insights'
   | 'personal_memory'
   | 'layered_refine'
-  | 'personal_skills';
+  | 'personal_skills'
+  | 'personal_local_skills';
 
 /** 页面元数据 */
 export interface PageMeta {
@@ -72,6 +73,9 @@ export function usePageMeta(): Record<PageId, PageMeta> {
     layered_refine:    { id: 'layered_refine',    label: t('menu.layered_refine'),    desc: t('menu.desc.layered_refine'),    group: t('menu.group.personal'), order: 2, hidden: true },
     // 「我的技能」：个人私有技能库（team_id='personal' + 虚拟 agent），与团队 Skills 页平行但彼此隔离。
     personal_skills:   { id: 'personal_skills',   label: t('menu.personal_skills'),   desc: t('menu.desc.personal_skills'),   group: t('menu.group.personal'), order: 3 },
+    // 「本地 Agent 技能」：只读扫描本机各 AI Agent 客户端（workbuddy/hermes/...）的本地 skill 目录，
+    // 与「我的技能」个人库（落 MemoryCore）互补——本页只浏览磁盘，不落库。
+    personal_local_skills: { id: 'personal_local_skills', label: t('menu.personal_local_skills'), desc: t('menu.desc.personal_local_skills'), group: t('menu.group.personal'), order: 4 },
   };
 }
 
@@ -96,6 +100,13 @@ export const ITEM_ICON: Record<PageId, JSX.Element> = {
   code: <CodeIcon size={16} />,
   skills: <ToolsIcon size={16} />,
   personal_skills: <ToolsIcon size={16} />,
+  personal_local_skills: (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7l9-4 9 4-9 4-9-4z" />
+      <path d="M3 12l9 4 9-4" />
+      <path d="M3 17l9 4 9-4" />
+    </svg>
+  ),
   chat_memory: <ChatIcon size={16} />,
   personal_insights: (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

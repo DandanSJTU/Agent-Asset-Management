@@ -541,7 +541,7 @@ export function registerPersonalSpaceRoutes(api: Hono, deps: PanelDeps): void {
     return proxyToGateway(c, `/api/v1/personal/pending?vendor=${encodeURIComponent(vendor)}&sessionId=${encodeURIComponent(sessionId)}`, 'GET');
   });
   api.get('/personal-space/memories', (c) => proxyToGateway(c, '/api/v1/personal/memories', 'GET'));
-  // ── M4b · 个人记忆 L2/L3 产物浏览（proxy 到 gateway；复用 Chat_Memory 的 scene/persona 落盘）──
+  // ── M4b · 个人记忆 L2/L3 产物浏览（proxy 到 gateway；复用对话记忆的 scene/persona 落盘）──
   api.get('/personal-space/scenes', (c) => {
     const vendor = String(c.req.query('vendor') ?? '');
     const sub = vendor ? `/api/v1/personal/scenes?vendor=${encodeURIComponent(vendor)}` : '/api/v1/personal/scenes';

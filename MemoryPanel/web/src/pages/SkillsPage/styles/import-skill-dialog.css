@@ -91,3 +91,58 @@ textarea._memory-isd-mono-input {
 ._memory-isd-result-text {
   white-space: pre-wrap;
 }
+
+/* ---- personal mode（从我的技能导入）列表 ---- */
+
+._memory-isd-personal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+._memory-isd-personal-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--tea-color-border-primary-default);
+  border-radius: 4px;
+  background: var(--tea-color-bg-secondary-default);
+}
+
+._memory-isd-personal-item {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+._memory-isd-personal-item + ._memory-isd-personal-item {
+  border-top: 1px solid var(--tea-color-border-tertiary-default);
+}
+._memory-isd-personal-item.is-disabled {
+  opacity: 0.55;
+}
+
+._memory-isd-personal-name {
+  margin-left: 4px;
+}
+
+._memory-isd-personal-meta {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--tea-color-text-tertiary);
+}
+
+._memory-isd-personal-dup {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--tea-color-text-warning-default);
+}
+
+/* 未选归属 Agent 时的可见提示（导入按钮置灰的原因说明） */
+._memory-isd-agent-required {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--tea-color-text-warning-default);
+}

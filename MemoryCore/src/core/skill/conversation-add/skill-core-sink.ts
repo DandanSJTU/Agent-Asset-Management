@@ -20,6 +20,7 @@
 
 import type { ExtractedCandidate, ExtractorLogger } from "../queue/types.js";
 import type { SkillCandidatesSink } from "./extract-worker.js";
+import type { SkillTaskEntry } from "./buffer-storage.js";
 
 /** 与 gateway 侧 MetadataService 使用的形状对齐（只用到 ensureSkillAsset）。 */
 export interface MetadataServiceLike {
@@ -28,6 +29,14 @@ export interface MetadataServiceLike {
     team_id: string;
     agent_id: string;
     name: string;
+  }): Promise<unknown>;
+  /**
+   * 把已登记的 skill asset visibility 置成指定值（显式导入即共享用）。
+   * 缺失时退化为 no-op —— skill 已落库，只是保持 private 默认。
+   */
+  setSkillAssetVisibility?(input: {
+    skill_id: string;
+    visibility: "team" | "private";
   }): Promise<unknown>;
 }
 
@@ -45,13 +54,7 @@ export class SkillCoreSink implements SkillCandidatesSink {
   constructor(private readonly opts: SkillCoreSinkOptions) {}
 
   async applyCandidates(input: {
-    task: {
-      team_id: string;
-      user_id: string;
-      agent_id: string;
-      task_ref_id?: string;
-      session_id: string;
-    };
+    task: SkillTaskEntry;
     candidates: ExtractedCandidate[];
     workerId: string;
   }): Promise<void> {
@@ -87,6 +90,23 @@ export class SkillCoreSink implements SkillCandidatesSink {
           `[skill-core-sink] worker=${workerId} ensureSkillAsset failed skill_id=${skillId}: ` +
             (err instanceof Error ? err.message : String(err)),
         );
+        continue;
+      }
+
+      // 显式导入即共享（task.visibility='team'，仅面板 skill 导入弹窗的
+      // 目录 / 对话导入传）：ensureSkillAsset 默认 private（2026-07 安全
+      // 决策），这里按调用方显式意图置成 team，让导入的技能直接出现在
+      // 「团队资产」tab（该 tab 数据源只返回 visibility=team 的技能）。
+      // 失败只 warn 不抛 —— skill 已落库，共享可后补。
+      if (task.visibility === "team" && metadata.setSkillAssetVisibility) {
+        try {
+          await metadata.setSkillAssetVisibility({ skill_id: skillId, visibility: "team" });
+        } catch (err) {
+          logger.warn(
+            `[skill-core-sink] worker=${workerId} setSkillAssetVisibility failed skill_id=${skillId}: ` +
+              (err instanceof Error ? err.message : String(err)),
+          );
+        }
       }
     }
   }

@@ -338,7 +338,7 @@ export interface ExtractResponse {
   l0Count: number;
   l1Count: number;
   l1Rounds: number;
-  /** Chat_Memory 完整分层提炼：L2 场景块 / L3 画像计数（仅 layers 含 L2/L3 时 > 0）。 */
+  /** 对话记忆完整分层提炼：L2 场景块 / L3 画像计数（仅 layers 含 L2/L3 时 > 0）。 */
   l2Count?: number;
   l3Count?: number;
   durationMs: number;
@@ -397,7 +397,7 @@ export function fetchPersonalMemories(signal?: AbortSignal): Promise<PersonalMem
   return psGet<PersonalMemoryResponse>('/memories', signal);
 }
 
-/** L2 场景块（Chat_Memory SceneExtractor 产物，dataDir/profiles/<scope>/scene_blocks/*.md）。 */
+/** L2 场景块（对话记忆 SceneExtractor 产物，dataDir/profiles/<scope>/scene_blocks/*.md）。 */
 export interface PersonalScene {
   id: string;
   filename: string;
@@ -410,7 +410,7 @@ export interface PersonalSceneResponse {
   scenes: PersonalScene[];
 }
 
-/** L3 长期画像（Chat_Memory PersonaGenerator 产物，dataDir/profiles/<scope>/persona.md）。 */
+/** L3 长期画像（对话记忆 PersonaGenerator 产物，dataDir/profiles/<scope>/persona.md）。 */
 export interface PersonalPersonaResponse {
   persona: string | null;
   filename: string | null;

@@ -1180,6 +1180,26 @@ export class MetadataService {
     return updated;
   }
 
+  /**
+   * 把 skill asset 的 visibility 置成指定值。
+   *
+   * 用于「显式导入即共享」：面板 skill 导入弹窗（目录 / 对话导入）传
+   * visibility='team' 后，extract worker 的 SkillCoreSink 对新建 skill
+   * 调本方法，让技能直接出现在「团队资产」tab（该 tab 数据源只返回
+   * visibility=team 的技能，2026-10-15 用户实测「导入成功但页面不展示」
+   * 的根因就是导入落 private + 共享入口 tab 被隐藏）。
+   *
+   * 不改变 ensureSkillAsset 的 private 默认值 —— 2026-07 安全决策
+   * （skill 内容可能含内部知识 / 脚本 / 凭证注释）保持不变，共享必须
+   * 是显式动作（调用方显式传 visibility 或用户手动切）。
+   */
+  async setSkillAssetVisibility(params: {
+    skill_id: string;
+    visibility: AssetVisibility;
+  }): Promise<AssetEntity> {
+    return this.updateAsset(params.skill_id, { visibility: params.visibility });
+  }
+
   async deleteAssets(assetIds: string[]): Promise<BatchDeleteResult> {
     const result = await this.store.deleteAssets(assetIds);
     // 清 ensure 缓存，避免删后短路径误判「仍存在」

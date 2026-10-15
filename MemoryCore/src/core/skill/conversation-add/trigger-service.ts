@@ -58,6 +58,13 @@ export interface TriggerArchiveInput {
    */
   mode?: 'strict';
   /**
+   * direct-trigger 独占：显式导入（面板 skill 导入弹窗）要求落库即团队共享时
+   * 传 'team'，落到 SkillTaskEntry.visibility；SkillCoreSink 消费时对新建
+   * skill asset 显式置共享。不传 = 保持 ensureSkillAsset 的 private 默认
+   * （2026-07 安全决策）。conversation/add 路径不传。
+   */
+  visibility?: 'team' | 'private';
+  /**
    * 上游 handler 生成的 request_id。传入后 trigger 内部分段 obsLogger 事件
    * 会带上，方便按 req_id 过滤 handler + trigger + worker 全链路。缺省不影响功能。
    */
@@ -145,6 +152,9 @@ export class SkillTriggerService {
       // mode 只在 strict 时写入; 默认 undefined 让老 task 反序列化 + 老 Worker
       // 消费路径都跟历史一致 (extract() 不传 mode → SKILL_REVIEW_PROMPT)。
       ...(input.mode ? { mode: input.mode } : {}),
+      // visibility 只在显式导入传了才写入; 缺省 undefined → sink 不改 visibility,
+      // 保持 ensureSkillAsset 的 private 默认 (2026-07 安全决策)。
+      ...(input.visibility ? { visibility: input.visibility } : {}),
     };
 
     // [obs] 归档段五个关键 IO：writeArchive / mutex acquire / readTasks /

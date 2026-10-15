@@ -2,7 +2,7 @@
  * SettingsDialog — 全局设置弹窗（从顶栏⚙图标触发）。
  *
  * 当前只有一个 Tab：「权限管理」— 控制资源管理模块的开关
- * （Wiki / Code / Skill / Chat_Memory），防止未稳定使用的模块
+ * （Wiki / Code / Skill / 对话记忆），防止未稳定使用的模块
  * 被注入内核运行。
  *
  * 后续可在 TABS 数组里追加其他 Tab（如通知、偏好设置等）。

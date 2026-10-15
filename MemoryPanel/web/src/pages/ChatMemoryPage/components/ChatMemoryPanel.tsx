@@ -6,7 +6,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Segment, Select } from 'tea-component';
 import { tea } from '@/lib/tea-bridge';
-import { chatMemoryApi } from '@/lib/teamApi';
 import { type ScopeTab } from '../constants/types';
 
 import { BlockDetail } from './BlockDetail';
@@ -60,6 +59,10 @@ export default function ChatMemoryPanel(
     setScopeTab,
     agentFilter,
     setAgentFilter,
+    // demo
+    demoMode,
+    setDemoMode,
+    api,
     // computed
     selected,
     layerPage,
@@ -120,6 +123,13 @@ export default function ChatMemoryPanel(
         }
         actions={
           <>
+            <Button
+              type={demoMode ? 'weak' : 'primary'}
+              onClick={() => setDemoMode(!demoMode)}
+              tooltip={t('memory.demo.tooltip')}
+            >
+              {demoMode ? t('memory.demo.on') : t('memory.demo.off')}
+            </Button>
             {(() => {
               const isPrivateAndNotOwner =
                 !!selected &&
@@ -293,7 +303,7 @@ export default function ChatMemoryPanel(
           onClose={() => setShowAllocate(false)}
           onAllocated={async (agentId) => {
             try {
-              await chatMemoryApi.allocate(activeTeamId!, selected.id, agentId);
+              await api.allocate(activeTeamId!, selected.id, agentId);
               tea.notify.success(t('memory.notify.allocated'));
               setShowAllocate(false);
               fetchBlocks();
