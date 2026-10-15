@@ -1,0 +1,179 @@
+# Dependencies
+node_modules/
+
+# Runtime workspace
+workspace/
+
+# Environment variables
+.env
+
+# Test caches
+__tests__/soak/.model-cache/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Migration build output
+scripts/export-tencent-vdb/dist/
+scripts/migrate-sqlite-to-tcvdb/dist/
+scripts/read-local-memory/dist/
+
+# Root-level build output (not used at runtime, not published)
+dist/
+
+node_modules/
+benchmark-runs/
+.codebuddy
+.ai_assets
+
+# Dev-only scripts (not shipped in MR)
+# 注意：lockfile（package-lock.json / pnpm-lock.yaml / yarn.lock）刻意入籍——
+# 公开分享后其他人需要 `npm ci` 复现安装（本项目含 sqlite-vec / better-sqlite3
+# 等 native 依赖，版本漂移会直接导致构建失败）。
+install-plugin.sh
+test-offload.sh
+test-offload-mmd.sh
+test-offload-sessions.sh
+
+# npm pack / release tarballs (never commit packaged outputs)
+dist-pack/
+*.tgz
+*.tar.gz
+*.whl
+
+# TypeScript build intermediates
+*.tsbuildinfo
+*.js.map
+
+# SDK build output (source is .ts/.py, not compiled output)
+sdk/typescript/dist/
+sdk/python/dist/
+sdk/python/*.egg-info/
+
+# Vitest cache
+.vite/
+
+# Environment (already covered above, explicit for clarity)
+.env.*
+!.env.example
+
+# offload_server 真值配置（含 tdai kernel Bearer），按 .example 自建
+__tests__/offload_server/remote-config.json
+
+# start-all.sh 运行时生成，含 admin user_key 与上游 LLM API key
+deploy/global-images/.admin-key
+deploy/global-images/.proxy-config/
+deploy/global-images/.memory-core-config/
+
+# Eval scripts output
+scripts/eval-report.json
+
+# OS files
+.DS_Store
+
+# Generated binaries
+vectors.db
+
+# Office temp files
+~$*
+
+# Generated docs (HTML/PDF)
+docs/*.html
+docs/*.pdf
+docs/*.png
+docs/*.pptx
+docs/*.mmd
+
+# Log files
+*.log
+scene_blocks/
+gateway.log
+
+# 可观测性私人文档（不上传git）
+docs/开发环境说明.md
+docs/可观测性开发规范.md
+docs/插件埋点列表.md
+
+# DevCloud multipod test runtime artifact (contains real credentials, never commit)
+__tests__/devcloud-multipod/.env.devcloud
+
+# Local-only diagnostic / convention scripts (not shipped)
+__tests__/devcloud-multipod/diag-instance.sh
+scripts/COMMIT_CONVENTION.md
+scripts/pre-commit-check.sh
+
+# OpenClaw 安装脚本 env 单测（本地保留，不入库）
+MemoryCore/scripts/tests/
+
+# Backup files
+*.bak
+
+# self-implement-wiki e2e 产物（人工查看用，不入库）
+docs/knowledge/self-implement-wiki/_e2e-output/
+
+# Development databases and runtime data (never commit)
+data/skills.db
+data/tdai-memory.db
+**/data/vectors.db
+**/data/.metadata/
+**/data/scene_blocks/
+**/data/knowledge.db
+**/data/knowledge.db-shm
+**/data/knowledge.db-wal
+**/data/_wiki_engines/
+**/data/mem-*/
+
+# Test coverage output
+coverage/
+**/coverage/
+
+# Local project docs (generated, not for VCS)
+.local-docs/
+
+# L0 mongo bench generated reports
+MemoryCore/scripts/bench-l0-mongo/reports/
+
+# Local-only: parity snapshots & runtime configs (never commit)
+MemoryProxy/.archive-tmp/
+z_config/
+
+# ── 本地部署运行时数据（含真实记忆库/对话/个人 session 元数据，绝不可入库）──
+local-deploy/data/
+local-deploy/pids/
+local-deploy/*.yaml
+local-deploy/*.json
+# local-deploy 其余文件（*.sh/*.py/*.plist/launchagents/演示数据）含真实 LLM
+# 密钥与本机绝对路径，整体不入公开仓；如后续分享「无 Docker 原生部署」需先脱敏
+local-deploy/
+# SQLite 临时文件（含真实数据，.gitignore 默认只忽略了 vectors.db 本体）
+*.db-shm
+*.db-wal
+**/data/conversations/
+
+# ── 前端构建产物（每次构建都变，纯噪声）──
+MemoryPanel/web/dist/
+**/web/dist/
+
+# ── 个人临时/草稿目录（对话可视化脚本与产物等，非项目源码）──
+zzzz/
+
+# ── 个人长期记忆与笔记（含私有 MEMORY.md，不应进公开仓）──
+.workbuddy/
+
+# ── 以下为公开分享前补充的排除项 ──
+# 本地调试脚本（含真实 LLM API key）
+MemoryCore/.l2-repro*.mjs
+# 面板个人 facts 缓存与本地 template
+MemoryPanel/data/
+# 写死本机绝对路径的本地启动脚本
+start-panel-offline.sh
+# 内部运维记录（含本地 admin key 说明）
+docs/default-user-key.md
+# 根目录内部提示词工程文档（L0-L3 机制详解 / 提示词全文与批注）
+/L0-L3-*.html
+/L1-L2-L3-*.html
+# 分享打包产物
+dist-share/

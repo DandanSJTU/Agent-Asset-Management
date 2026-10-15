@@ -1,0 +1,1496 @@
+/**
+ * session-insights.css — 会话洞察三视图统一控制条样式。
+ * 对标 docs/coslash-ui-views-redesign.html 的设计 token（trig/chips/range/rollup/表格/看板卡片），
+ * 颜色回落到 tea-component CSS 变量，保证与控制台其他页面视觉一致。
+ */
+
+/* ===== 筛选行（facet 触发器 + ViewSwitch） ===== */
+.sim-frow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sim-viewsw {
+  margin-left: auto;
+}
+
+.sim-trig {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--tea-color-border, #e3e6ec);
+  background: var(--tea-color-bg-container, #fff);
+  border-radius: 9px;
+  font-size: 12px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  font-weight: 550;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sim-trig b {
+  color: var(--tea-color-text-primary, #1d2330);
+  font-weight: 600;
+}
+.sim-trig.on {
+  border-color: #c9d3f3;
+  background: #eef1fd;
+  color: #2740a8;
+}
+.sim-caret {
+  font-style: normal;
+  font-size: 10px;
+  opacity: 0.7;
+}
+.sim-badge {
+  background: #3554d1;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 99px;
+  min-width: 15px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* ===== 搜索行（chips + SearchBox） ===== */
+.sim-searchrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.sim-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  background: #eef1fd;
+  border: 1px solid #c9d3f3;
+  color: #2740a8;
+  border-radius: 7px;
+  padding: 0 4px 0 8px;
+  font-size: 11px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.sim-chip .sim-chip-x {
+  font-style: normal;
+  cursor: pointer;
+  opacity: 0.65;
+  padding: 0 3px;
+}
+.sim-chip .sim-chip-x:hover {
+  opacity: 1;
+}
+
+/* ===== scope 行（Rollup + 视图专属右簇 + range） ===== */
+.sim-scoperow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  flex-wrap: wrap;
+}
+.sim-rollup {
+  font-size: 12px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.sim-rollup b {
+  color: var(--tea-color-text-primary, #1d2330);
+  font-weight: 650;
+}
+.sim-ctlcluster {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sim-vsep {
+  width: 1px;
+  height: 20px;
+  background: var(--tea-color-border, #e3e6ec);
+}
+.sim-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--tea-color-border, #e3e6ec);
+  background: var(--tea-color-bg-container, #fff);
+  border-radius: 9px;
+  font-size: 11.5px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sim-seg b {
+  color: var(--tea-color-text-primary, #1d2330);
+  font-weight: 600;
+}
+.sim-range {
+  display: flex;
+  background: var(--tea-color-bg-secondary, #f1f3f6);
+  border-radius: 9px;
+  padding: 2px;
+  gap: 2px;
+}
+.sim-range i {
+  font-size: 11px;
+  font-style: normal;
+  padding: 3px 9px;
+  border-radius: 7px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sim-range i.on {
+  background: var(--tea-color-bg-container, #fff);
+  color: var(--tea-color-text-primary, #1d2330);
+  font-weight: 650;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.sim-dbtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--tea-color-border, #e3e6ec);
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tea-color-text-secondary, #5c6575);
+  background: var(--tea-color-bg-container, #fff);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+.sim-dbtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===== facet 下拉菜单 ===== */
+.sim-fmenu {
+  min-width: 200px;
+  max-height: 300px;
+  overflow: auto;
+  padding: 6px;
+  background: var(--tea-color-bg-container, #fff);
+  border: 1px solid var(--tea-color-border, #e3e6ec);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(29, 35, 48, 0.12);
+}
+.sim-fitem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sim-fitem:hover {
+  background: var(--tea-color-bg-secondary, #f1f3f6);
+}
+.sim-fitem.on {
+  color: #2740a8;
+  font-weight: 600;
+}
+.sim-fname {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.sim-fcnt {
+  color: var(--tea-color-text-secondary, #888);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.sim-fclear {
+  border-top: 1px solid var(--tea-color-border, #eee);
+  margin-top: 4px;
+  padding: 6px 8px 2px;
+}
+.sim-fempty {
+  padding: 8px;
+  color: var(--tea-color-text-placeholder, #aaa);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ===== Table 视图：扁平列表 + 排序表头 + 密度 ===== */
+.sim-tbl {
+  margin-top: 12px;
+  border: 1px solid var(--tea-color-border, #e3e6ec);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--tea-color-bg-container, #fff);
+}
+.sim-th {
+  display: flex;
+  gap: 10px;
+  padding: 7px 12px;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tea-color-text-secondary, #5c6575);
+  border-bottom: 1px solid var(--tea-color-border, #e3e6ec);
+  background: var(--tea-color-bg-container, #fff);
+}
+.sim-sort {
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+.sim-sort.on {
+  color: #3554d1;
+}
+.sim-tr {
+  display: flex;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--tea-color-border-weak, #eef0f4);
+  align-items: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sim-tr:hover {
+  background: var(--tea-color-bg-secondary, #f7f8fa);
+}
+.sim-tr.sel {
+  background: #eef1fd;
+  box-shadow: inset 3px 0 0 #3554d1;
+}
+.sim-tr:last-child {
+  border-bottom: 0;
+}
+/* 密度切换：compact 压缩行高 */
+.sim-compact .sim-tr {
+  padding: 4px 12px;
+  font-size: 11px;
+}
+.sim-compact .sim-t1 {
+  font-size: 11px;
+}
+.sim-c1 {
+  flex: 1.8;
+  min-width: 0;
+}
+.sim-c2 {
+  flex: 1.2;
+  min-width: 0;
+}
+.sim-c3 {
+  width: 110px;
+  flex: none;
+}
+.sim-c4 {
+  width: 76px;
+  flex: none;
+}
+.sim-c5 {
+  width: 130px;
+  flex: none;
+}
+.sim-t1 {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sim-t2 {
+  display: block;
+  color: var(--tea-color-text-secondary, #888);
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sim-st {
+  font-size: 11px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sim-sdot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+.sim-cost {
+  font-size: 11.5px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sim-cost span {
+  display: block;
+  color: var(--tea-color-text-secondary, #888);
+  font-size: 10px;
+}
+.sim-more {
+  font-size: 11px;
+  color: #3554d1;
+  text-align: center;
+  padding: 8px;
+  cursor: pointer;
+  border-top: 1px solid var(--tea-color-border-weak, #eef0f4);
+}
+.sim-more:hover {
+  background: var(--tea-color-bg-secondary, #f7f8fa);
+}
+
+/* ===== Board 视图：二维卡片看板 ===== */
+.sim-board-scroll {
+  overflow-x: auto;
+  margin-top: 12px;
+  padding-bottom: 4px;
+}
+.sim-board-grid {
+  display: grid;
+  gap: 8px;
+  align-items: start;
+  min-width: 0;
+}
+.sim-colhead {
+  position: sticky;
+  top: 0;
+  background: var(--tea-color-bg-container, #fff);
+  border-bottom: 1px solid var(--tea-color-border, #e3e6ec);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 6px;
+  font-size: 11px;
+  min-width: 0;
+}
+.sim-colhead b {
+  font-weight: 650;
+}
+.sim-cnt {
+  color: var(--tea-color-text-secondary, #888);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.sim-rowhead {
+  grid-column: 1 / -1;
+  border-bottom: 1px solid var(--tea-color-border, #e3e6ec);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 6px;
+  font-size: 11px;
+  font-weight: 650;
+  min-width: 0;
+}
+.sim-cell {
+  background: var(--tea-color-bg-secondary, #f7f8fa);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+  min-width: 0;
+}
+.sim-card {
+  border: 1px solid var(--tea-color-border, #e3e6ec);
+  background: var(--tea-color-bg-container, #fff);
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-width: 0;
+}
+.sim-card:hover {
+  border-color: #c9d3f3;
+  box-shadow: 0 0 0 1px #c9d3f3;
+}
+.sim-card.sel {
+  border-color: #c9d3f3;
+  box-shadow: inset 3px 0 0 #3554d1;
+}
+.sim-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.sim-vpill {
+  font-size: 10px;
+  font-weight: 650;
+  padding: 1px 7px;
+  border-radius: 99px;
+  white-space: nowrap;
+  background: #eef1fd;
+  color: #2740a8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+.sim-card-cost {
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sim-card-title {
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+  margin-top: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sim-card-sum {
+  font-size: 10.5px;
+  color: var(--tea-color-text-secondary, #888);
+  line-height: 1.4;
+  margin-top: 3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sim-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 10px;
+  color: var(--tea-color-text-secondary, #888);
+  font-variant-numeric: tabular-nums;
+}
+.sim-mono2 {
+  font-family: ui-monospace, Menlo, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.sim-card-ready {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--tea-color-border-weak, #eef0f4);
+  font-size: 10px;
+  color: var(--tea-color-text-secondary, #888);
+}
+.sim-ready-l {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== Insights 视图：KPI 条 ===== */
+.sim-kpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+.sim-kpi-k {
+  background: var(--tea-color-bg-container, #fff);
+  border: 1px solid var(--tea-color-border, #e7e7e7);
+  border-radius: 10px;
+  padding: 11px 12px;
+}
+.sim-kpi-kl {
+  font-size: 11px;
+  color: var(--tea-color-text-secondary, #5c6575);
+}
+
+/* ===== Inspector 滑出面板（M-A）：右侧 fixed 层 + docked/modal 双态 ===== */
+/* modal 遮罩：仅窄屏（<1180px）出现，点外关闭 */
+.sim-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 40;
+}
+.sim-inspector {
+  position: fixed;
+  right: 0;
+  background: var(--tea-color-bg-container, #fff);
+  border-left: 1px solid var(--tea-color-border, #e3e6ec);
+  box-shadow: -8px 0 24px rgba(29, 35, 48, 0.1);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* 左缘拖拽条：向左拖 = 增大宽度（复用 useResizable 右侧语义） */
+.sim-insp-resizer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  border-left: 2px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sim-insp-resizer:hover,
+.sim-insp-resizer:active {
+  border-left-color: #3554d1;
+  background: rgba(53, 84, 209, 0.06);
+}
+.sim-insp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px 10px 16px;
+  border-bottom: 1px solid var(--tea-color-border, #e3e6ec);
+  flex: none;
+}
+.sim-insp-titles {
+  min-width: 0;
+}
+.sim-insp-t1 {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sim-insp-t2 {
+  font-size: 10.5px;
+  color: var(--tea-color-text-placeholder, #aaa);
+  font-family: ui-monospace, Menlo, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+.sim-insp-close {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--tea-color-text-secondary, #5c6575);
+  cursor: pointer;
+  border-radius: 6px;
+}
+.sim-insp-close:hover {
+  background: var(--tea-color-bg-secondary, #f1f3f6);
+}
+.sim-insp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px 20px;
+}
+/* 降级：陈旧条（后端注入 fresh=false 后启用） */
+.sim-stale {
+  font-size: 11px;
+  color: #9a6b00;
+  background: #fffbe8;
+  border: 1px solid #f0d98c;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+/* 降级：切换会话 / 刷新中保留旧内容不闪白 */
+.sim-updating {
+  font-size: 11px;
+  color: var(--tea-color-text-secondary, #888);
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sim-updating::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border: 2px solid #c9d3f3;
+  border-top-color: #3554d1;
+  border-radius: 50%;
+  animation: sim-spin 0.8s linear infinite;
+}
+@keyframes sim-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* a11y：键盘聚焦的会话行 / 卡片显示焦点轮廓 */
+.sim-tr:focus-visible,
+.sim-card:focus-visible {
+  outline: 2px solid #3554d1;
+  outline-offset: -2px;
+}
+
+/* ===== M-C：Inspector 六区块 + 二级 diff ===== */
+.sim-block {
+  margin-bottom: 2px;
+}
+.sim-block-h {
+  margin-bottom: 6px;
+}
+.sim-muted {
+  color: var(--tea-color-text-placeholder, #aaa);
+  font-size: 12px;
+}
+/* Artifacts */
+.sim-artifact {
+  text-align: center;
+  padding: 8px 12px;
+  background: var(--tea-color-bg-secondary, #f1f3f6);
+  border-radius: 8px;
+  min-width: 64px;
+}
+.sim-artifact-v {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tea-color-text-primary, #1d2330);
+}
+.sim-artifact-l {
+  font-size: 11px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  margin-top: 2px;
+}
+/* Debrief */
+.sim-klabel {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--tea-color-text-placeholder, #8b93a3);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.sim-debrief-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tea-color-text-primary, #1d2330);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* Files changed 列表（可点击 → 二级 diff） */
+.sim-files {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sim-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 5px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  color: var(--tea-color-text-primary, #1d2330);
+}
+.sim-file-row:hover {
+  background: var(--tea-color-bg-secondary, #f1f3f6);
+}
+.sim-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, Menlo, monospace;
+}
+.sim-file-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+.sim-add {
+  color: #00a870;
+  font-weight: 700;
+}
+.sim-del {
+  color: #e34d59;
+  font-weight: 700;
+}
+.sim-new-tag {
+  background: #00a870;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+/* Commands / Commits / Todos 列表 */
+.sim-cmdlist,
+.sim-commitlist,
+.sim-todolist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sim-cmd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.sim-cmd-name {
+  font-family: ui-monospace, Menlo, monospace;
+  color: var(--tea-color-text-primary, #1d2330);
+}
+.sim-cmd-count {
+  color: var(--tea-color-text-secondary, #5c6575);
+  font-weight: 600;
+}
+.sim-commit-row {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 11.5px;
+}
+.sim-commit-hash {
+  font-family: ui-monospace, Menlo, monospace;
+  color: #3554d1;
+}
+.sim-commit-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tea-color-text-primary, #1d2330);
+}
+.sim-commit-ts {
+  color: var(--tea-color-text-placeholder, #aaa);
+  white-space: nowrap;
+}
+.sim-todo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.sim-todo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c9d3f3;
+  flex: none;
+}
+.sim-todo-dot.done {
+  background: #00a870;
+}
+.sim-todo-subj {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sim-todo-status {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 6px;
+  flex: none;
+}
+.sim-todo-status.done {
+  color: #00a870;
+  background: rgba(0, 168, 112, 0.12);
+}
+.sim-todo-status.prog {
+  color: #3554d1;
+  background: rgba(53, 84, 209, 0.12);
+}
+.sim-todo-status.pend {
+  color: var(--tea-color-text-secondary, #5c6575);
+  background: var(--tea-color-bg-secondary, #f1f3f6);
+}
+/* Timeline chips 过滤 */
+/* S6 · TIMELINE */
+.sim-tl-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.sim-tl-sub {
+  color: var(--tea-color-text-placeholder, #aaa);
+  font-size: 11px;
+}
+.sim-tl-range {
+  color: var(--tea-color-text-placeholder, #aaa);
+  font-size: 11px;
+  font-family: var(--tea-font-mono, monospace);
+}
+.sim-tl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.sim-tl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--tea-color-border, #e3e6ec);
+  background: var(--tea-color-bg-container, #fff);
+  color: var(--tea-color-text-secondary, #5c6575);
+  border-radius: 99px;
+  font-size: 11px;
+  padding: 2px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.sim-tl-chip.on {
+  border-color: #c9d3f3;
+  background: #eef1fd;
+  color: #2740a8;
+  font-weight: 600;
+}
+.sim-tl-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sim-tl-rows {
+  max-height: 280px;
+  overflow-y: auto;
+}
+.sim-tl-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--tea-color-text-placeholder, #aaa);
+}
+.sim-tl-divider::before,
+.sim-tl-divider::after {
+  content: '';
+  height: 1px;
+  background: var(--tea-color-border, #e3e6ec);
+}
+.sim-tl-row {
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 0;
+}
+.sim-tl-row.sim-tl-bb {
+  border-bottom: 1px solid var(--tea-color-border, #eee);
+}
+.sim-tl-cat {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sim-tl-body {
+  min-width: 0;
+}
+.sim-tl-desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--tea-color-text-primary, #1d2330);
+  word-break: break-word;
+}
+.sim-tl-desc.sim-pre {
+  white-space: pre-wrap;
+}
+.sim-tl-desc.sim-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sim-tl-answer {
+  margin-top: 2px;
+  padding-left: 8px;
+  border-left: 2px solid var(--tea-color-border, #e3e6ec);
+  font-size: 11px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.sim-tl-expand {
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #3a6df0;
+  font-size: 11px;
+  cursor: pointer;
+}
+.sim-tl-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--tea-font-mono, monospace);
+  font-size: 10px;
+  color: var(--tea-color-text-placeholder, #aaa);
+  white-space: nowrap;
+}
+.sim-ready-ago {
+  font-weight: 400;
+  opacity: 0.85;
+}
+/* Footer（Copy Handoff） */
+.sim-footer {
+  border-top: 1px solid var(--tea-color-border, #e3e6ec);
+  margin: 4px -16px -20px;
+  padding: 12px 16px 16px;
+  background: var(--tea-color-bg-secondary, #f1f3f6);
+}
+.sim-footer-t {
+  margin-bottom: 8px;
+}
+.sim-footer-btns {
+  display: flex;
+  gap: 8px;
+}
+/* 二级 diff 滑出（右缘、不可拖拽） */
+.sim-diff-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
+  z-index: 60;
+}
+.sim-diff {
+  position: fixed;
+  right: 0;
+  width: min(520px, 50vw);
+  background: var(--tea-color-bg-container, #fff);
+  border-left: 1px solid var(--tea-color-border, #e3e6ec);
+  box-shadow: -8px 0 24px rgba(29, 35, 48, 0.12);
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sim-diffstat {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+}
+.sim-diffstat-cell {
+  text-align: center;
+  padding: 12px 6px;
+  background: var(--tea-color-bg-secondary, #f1f3f6);
+  border-radius: 8px;
+}
+.sim-diffstat-cell > span {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+}
+.sim-diffstat-cell > label {
+  display: block;
+  font-size: 11px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  margin-top: 4px;
+}
+
+/* ===== 搜索增强：匹配计数 / 最近搜索 / 命中高亮 / 搜索空状态 ===== */
+/* 匹配计数：等宽数字防跳动（coslash `N matches` 同款口径） */
+.sim-matches {
+  font-size: 12px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.sim-matches b {
+  color: #2740a8;
+  font-weight: 650;
+}
+
+/* 最近搜索下拉（挂在 tea Dropdown 的弹出层内，只需约束宽度） */
+.sim-fmenu.sim-hist {
+  min-width: 200px;
+  max-width: 320px;
+}
+.sim-hist-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-size: 12px;
+  color: var(--tea-color-text-primary, #1d2330);
+  cursor: pointer;
+  border-radius: 6px;
+}
+.sim-hist-item:hover {
+  background: #f2f4f8;
+}
+.sim-hist-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sim-hist-clear {
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-top: 1px solid var(--tea-color-border, #e3e6ec);
+  background: transparent;
+  text-align: left;
+  font-size: 11.5px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  cursor: pointer;
+}
+.sim-hist-clear:hover {
+  color: #3554d1;
+}
+
+/* 命中高亮：不覆盖行/卡片的选中态配色，仅做淡底强调 */
+.sim-mark {
+  background: #fff3c4;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 600;
+}
+.sim-tr.sel .sim-mark,
+.sim-card.sel .sim-mark {
+  background: #ffe08a;
+}
+
+/* 搜索空状态（有查询但零命中，与「无数据」区分开） */
+.sim-nomatch {
+  margin-top: 16px;
+  padding: 26px 20px;
+  text-align: center;
+  border: 1px dashed var(--tea-color-border, #e3e6ec);
+  border-radius: 10px;
+  background: var(--tea-color-bg-container, #fff);
+}
+.sim-nomatch .sim-nm-t {
+  font-size: 13.5px;
+  color: var(--tea-color-text-primary, #1d2330);
+  font-weight: 600;
+  word-break: break-all;
+}
+.sim-nomatch .sim-nm-h {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  line-height: 1.7;
+}
+.sim-nomatch .sim-nm-btn {
+  margin-top: 12px;
+  display: inline-block;
+  padding: 5px 14px;
+  border: 1px solid #c9d3f3;
+  background: #eef1fd;
+  color: #2740a8;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sim-nomatch .sim-nm-btn:hover {
+  background: #e3e8fb;
+}
+
+/* 跨时间窗命中提示（零命中空状态内的次级说明） */
+.sim-nomatch .sim-nm-oor {
+  padding: 6px 10px;
+  margin-top: 8px;
+  border-radius: 6px;
+  background: #fff8e6;
+  border: 1px solid #f0dfae;
+  color: #8a5a00;
+}
+
+/* ===== M-D：RESUME OR HAND OFF / DEBRIEF 英文分区标题 + verdict 徽章 ===== */
+.sim-en-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--tea-color-text-primary, #1d2330);
+}
+.sim-verdict {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: 999px;
+  line-height: 1.6;
+}
+.sim-verdict.resume {
+  color: #00a870;
+  background: rgba(0, 168, 112, 0.12);
+  border: 1px solid rgba(0, 168, 112, 0.35);
+}
+.sim-verdict.inspect {
+  color: #d98a00;
+  background: rgba(255, 156, 0, 0.12);
+  border: 1px solid rgba(255, 156, 0, 0.35);
+}
+.sim-verdict.fresh {
+  color: #e34d59;
+  background: rgba(227, 77, 89, 0.12);
+  border: 1px solid rgba(227, 77, 89, 0.35);
+}
+
+/* ===== M-D：五格（Context used / Compactions / Branch / Working tree / Prompt cache） ===== */
+.sim-ready-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.sim-ready-cell {
+  border: 1px solid var(--tea-color-border, #e7e7e7);
+  border-radius: 6px;
+  padding: 7px 5px 8px;
+  text-align: center;
+  background: var(--tea-color-bg-container, #fff);
+}
+.sim-ready-label {
+  font-size: 9.5px;
+  color: var(--tea-color-text-secondary, #888);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.sim-ready-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin: 0 auto 3px;
+}
+.sim-ready-value {
+  font-size: 10.5px;
+  font-weight: 650;
+  line-height: 1.25;
+  word-break: break-word;
+}
+.sim-ready-cache-state {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.sim-ready-windows {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  font-size: 9px;
+  color: var(--tea-color-text-secondary, #888);
+}
+.sim-ready-windows .sim-win b {
+  font-weight: 800;
+  margin-right: 1px;
+}
+
+/* ===== M-D：Debrief 三级兜底渲染 ===== */
+.sim-debrief {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sim-db-row {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+.sim-db-row .sim-klabel {
+  margin-top: 1px;
+}
+.sim-db-content {
+  min-width: 0;
+}
+.sim-db-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #3554d1;
+  background: rgba(53, 84, 209, 0.1);
+  border: 1px solid rgba(53, 84, 209, 0.3);
+  border-radius: 4px;
+  padding: 0 5px;
+  margin-bottom: 3px;
+}
+.sim-debrief-prose {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tea-color-text-primary, #1d2330);
+}
+.sim-db-heading {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 2px 0;
+  color: var(--tea-color-text-primary, #1d2330);
+}
+.sim-db-list {
+  margin: 2px 0;
+  padding-left: 18px;
+}
+.sim-db-list li {
+  margin: 1px 0;
+}
+.sim-db-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  border: none;
+  background: transparent;
+  color: #3554d1;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+.sim-db-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--tea-color-text-secondary, #888);
+}
+.sim-db-empty {
+  font-size: 12px;
+  color: var(--tea-color-text-placeholder, #aaa);
+}
+.sim-spinner {
+  width: 11px;
+  height: 11px;
+  border: 2px solid #c9d3f3;
+  border-top-color: #3554d1;
+  border-radius: 50%;
+  display: inline-block;
+  animation: sim-spin 0.7s linear infinite;
+}
+@keyframes sim-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== M-D：合成失败 warning 条 ===== */
+.sim-syn-warn {
+  font-size: 11px;
+  color: #9a6b00;
+  background: #fffbe8;
+  border: 1px solid #f0d98c;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+.sim-syn-warn-tag {
+  color: #d98a00;
+  font-size: 11px;
+  cursor: help;
+}
+
+/* ===== M-D：复制失败提示 ===== */
+.sim-copy-fail {
+  font-size: 11px;
+  color: #e34d59;
+  background: rgba(227, 77, 89, 0.08);
+  border: 1px solid rgba(227, 77, 89, 0.3);
+  border-radius: 6px;
+  padding: 5px 10px;
+  margin-bottom: 8px;
+}
+
+/* ===== M-D：终端拉起成功提示 ===== */
+.sim-copy-ok {
+  font-size: 11px;
+  color: #2ba24c;
+  background: rgba(43, 162, 76, 0.08);
+  border: 1px solid rgba(43, 162, 76, 0.3);
+  border-radius: 6px;
+  padding: 5px 10px;
+  margin-bottom: 8px;
+}
+
+/* ===== M-D：Footer 三按钮 ===== */
+.sim-footer-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ================= M4b · 个人记忆「沉淀」列 / 徽标 / 生成对话框 ================= */
+.sim-c6 {
+  width: 188px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sim-precip-head {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tea-color-text-secondary, #5c6575);
+}
+.sim-precip {
+  white-space: nowrap;
+}
+/* 沉淀状态徽标 */
+.pc-badge {
+  display: inline-block;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.pc-never {
+  color: #6b7280;
+  background: #f1f2f4;
+  border-color: #e3e6ec;
+}
+.pc-running {
+  color: #8a5a00;
+  background: #fdf3e0;
+  border-color: #f0d9a8;
+}
+.pc-done {
+  color: #1f7a3d;
+  background: #e8f6ec;
+  border-color: #b7e3c4;
+}
+.pc-inc {
+  color: #185fa5;
+  background: #e6f1fb;
+  border-color: #b3d4f0;
+}
+.pc-failed {
+  color: #a32d2d;
+  background: #fcebeb;
+  border-color: #f0bdbd;
+}
+.pc-inc-dot {
+  margin-left: 2px;
+  font-weight: 700;
+  color: #185fa5;
+}
+/* Inspector 内沉淀控制块 */
+.pc-insp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pc-insp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pc-stars {
+  font-size: 12px;
+  color: #f0a020;
+  letter-spacing: 1px;
+}
+.pc-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pc-hint {
+  font-size: 11px;
+  color: var(--tea-color-text-secondary, #888);
+}
+/* 生成对话框（ExtractDialog） */
+.pc-field {
+  margin-bottom: 12px;
+}
+.pc-field > label {
+  display: block;
+  font-size: 12px;
+  color: var(--tea-color-text-secondary, #5c6575);
+  margin-bottom: 6px;
+}
+.pc-check {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pc-check-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--tea-color-text, #1c2330);
+  cursor: pointer;
+}
+.pc-cost {
+  font-size: 12px;
+  color: var(--tea-color-text-secondary, #5c6575);
+}
+.pc-cost-warn {
+  color: #e34d59;
+}
+.pc-success {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #1f7a3d;
+  background: #e8f6ec;
+  border: 1px solid #b7e3c4;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.pc-error {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #a32d2d;
+  background: #fcebeb;
+  border: 1px solid #f0bdbd;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
