@@ -72,6 +72,16 @@ if [[ "$NODE_MAJOR" -lt 22 ]] || { [[ "$NODE_MAJOR" -eq 22 ]] && [[ "$NODE_MINOR
 fi
 ok "Node v$NODE_VER"
 
+# 上限提示：Node 23+ 上 better-sqlite3 等原生模块常拿不到预编译包，会回退
+# 源码编译（需要完整 Xcode CLT / build-essential），实测 Node 24 上会链接失败。
+# 不阻断安装，但提前说清楚，免得卡在步骤 2 才回头查。
+if [[ "$NODE_MAJOR" -ge 23 ]]; then
+  warn "检测到 Node v$NODE_VER。本项目的原生依赖（better-sqlite3）在 Node 22 LTS 上
+    有官方预编译包、安装最稳；Node 23+ 可能因缺少预编译包而回退源码编译并失败。
+    若步骤 2 报 node-gyp 错误，请切换到 Node 22 LTS 后重试：
+      nvm install 22 && nvm use 22 && ./install.sh --force-deps"
+fi
+
 command -v npm >/dev/null 2>&1 || die "未检测到 npm（通常随 Node 一起安装）"
 ok "npm v$(npm -v)"
 
