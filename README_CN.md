@@ -45,6 +45,29 @@ $EDITOR .env       # 填入两组 LLM 参数（memory 组 + proxy 组）
 
 完整安装文档（Memory Hub 单独部署 / Proxy + Claude Code / CodeBuddy 用法 / 停止清理 / 端口
 说明等）见 [**INSTALL_CN.md**](./INSTALL_CN.md)（English: [INSTALL.md](./INSTALL.md)）。
+
+### 没有 Docker？用原生 Node 一键包
+
+目标机器不想装 Docker 时，可以直接源码跑，**只需要 Node.js ≥ 22.16**：
+
+```bash
+tar xzf agent-asset-management-src-*.tar.gz    # 拿到一键包
+cd agent-asset-management
+./install.sh
+```
+
+`install.sh` 会依次完成环境检查 → 依赖安装 → 前端构建 → LLM 配置引导 → 启动服务，
+结束后打印面板地址与登录 key。日常用 `./start.sh` / `./stop.sh` / `./status.sh` 管理。
+
+一键包由本仓库生成（产物在 `dist-share/`）：
+
+```bash
+bash scripts/package-share.sh          # 无 Docker 一键包（默认）
+bash scripts/package-share.sh --no-native   # 只出纯源码包
+```
+
+打包时会自动剔除 `node_modules` / 本地数据与密钥文件。详细说明见
+[`scripts/dist-assets/安装指南.md`](./scripts/dist-assets/安装指南.md)。
 MongoDB 存储后端为**试验特性**（默认关闭），见
 [INSTALL_CN.md · MongoDB 存储后端](./INSTALL_CN.md#可选能力mongodb-存储后端试验特性默认关闭)。
 

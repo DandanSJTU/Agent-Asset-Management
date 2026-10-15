@@ -11,10 +11,30 @@
 
 ## [Unreleased]
 
+### 📦 无 Docker 一键安装包
+
+- 新增「无 Docker 一键包」分发形态：对方只需 Node.js ≥ 22.16，解压后执行
+  `./install.sh` 即可跑起四件套（环境检查 → 依赖安装 → 前端构建 → LLM 配置引导
+  → 启动与健康检查）
+- 打包资产在 `scripts/dist-assets/`，由 `scripts/package-share.sh` 默认铺到包顶层：
+  `install.sh` / `start.sh` / `stop.sh` / `status.sh` / `config-templates/` /
+  `安装指南.md`；加 `--no-native` 可退回纯源码包
+- 生命周期脚本从 `runtime/config/llm.env` 单一真源渲染各组件配置，改完重启即生效；
+  四个端口支持环境变量覆盖（`CORE_PORT` / `PANEL_PORT` / `KNOWLEDGE_PORT` /
+  `PROXY_PORT`）
+
 ### 🏷️ 展示名改名
 
 - 产品展示名由 **Agent Memory Bank** 更名为 **Agent 资产管理**；侧边栏「Agent 资产管理」tab 更名为「Agent 资产库」
 - 仅改动文档与 UI 展示文案；npm scope、Python 包、Docker 镜像、目录名等代码身份不变
+
+### 🐛 修复
+
+- **打包脱敏规则静默失效**：`package-share.sh` 的密钥替换用 BRE 却写了 `{7,}`，
+  未转义导致被当字面量，命中列表照常打印但一个字都没改。改用 `-E` 扩展正则，
+  并把规则收窄为只匹配真密钥形态（`sk-<proj|ant|mem>-<24位+>` /
+  `sk-<28位+无分隔>` / `Bearer <24位+>`），源码里的 `sk-executor`、
+  `sk-source-router` 等标识符不再误伤；新增替换后残留复核
 
 ## [2.0.2] — 2026-10-09
 

@@ -46,6 +46,30 @@ Complete installation documentation (standalone Memory Hub deployment, Proxy + C
 The MongoDB storage backend is **experimental** (off by default); see
 [INSTALL.md · MongoDB storage backend](./INSTALL.md#optional-mongodb-storage-backend-experimental-off-by-default).
 
+### No Docker? Use the native Node one-click bundle
+
+If the target machine has no Docker, you can run straight from source — **Node.js ≥ 22.16 is the only requirement**:
+
+```bash
+tar xzf agent-asset-management-src-*.tar.gz    # unpack the bundle
+cd agent-asset-management
+./install.sh
+```
+
+`install.sh` walks through environment checks → dependency install → frontend build →
+LLM config wizard → service startup, then prints the panel URL and login key.
+Manage the stack day to day with `./start.sh` / `./stop.sh` / `./status.sh`.
+
+Generate the bundle from this repo (output lands in `dist-share/`):
+
+```bash
+bash scripts/package-share.sh               # native one-click bundle (default)
+bash scripts/package-share.sh --no-native   # plain source archive
+```
+
+Packaging automatically strips `node_modules`, local data and credential files.
+For details see [`scripts/dist-assets/安装指南.md`](./scripts/dist-assets/安装指南.md).
+
 ### Migrating data from an older version
 
 If you're already on an older release (v1.x / v0.x) and want to bring your existing data over to v2.0.0+, we provide a migration tool:

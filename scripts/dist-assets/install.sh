@@ -104,7 +104,16 @@ install_deps() {
         warn "$label 依赖安装失败（可选组件，不影响核心功能）—— 日志: runtime/logs/npm-$label.log"
         return 0
       fi
-      die "$label 依赖安装失败，查看日志: $RUNTIME/logs/npm-$label.log"
+      # 直接把日志尾部打出来，省得再翻文件——多数情况是网络不通或编译工具链缺失
+      echo ""
+      echo "  ── 日志末尾（runtime/logs/npm-$label.log）──"
+      tail -15 "$RUNTIME/logs/npm-$label.log" 2>/dev/null | sed 's/^/    /'
+      echo ""
+      die "$label 依赖安装失败。常见原因：
+    · 网络不通 / npm 源被墙 → 换个源：npm config set registry https://registry.npmmirror.com
+    · 原生模块编译失败（node-gyp）→ 先装工具链再跑：./install.sh --force-deps
+        macOS: xcode-select --install
+        Linux: sudo apt install -y python3 make g++"
     }
   ok "$label 依赖就绪"
 }
