@@ -390,13 +390,15 @@ We welcome contributions of all kinds — bug reports, feature suggestions, docu
   - M4a：个人 L0 写入入口与 `personal-extract` 提炼管线。
   - M4a′：L1 提炼管线 scope 透传（`writeMemory` / `extractL1Memories` / `createL1Runner`）。
   - M4b：会话洞察侧入口（部分）。
-  - 详见 `docs/personal-space-plan.html` 等设计文档。
-- **本地运行**（基于官方 1.0.2-beta.1）：
+  - （对应设计文档为内部资料，未随本仓库公开。）
+- **本地运行**（基于官方 1.0.2-beta.1，与官方部署方式一致）：
   ```bash
-  # 各模块安装依赖后，用 local-deploy 脚本启动
-  bash local-deploy/start-services.sh   # core / knowledge / proxy
-  bash local-deploy/start-panel.sh      # 面板，访问 http://localhost:8125
+  git clone https://github.com/DandanSJTU/Agent-Asset-Management.git
+  cd Agent-Asset-Management/deploy/global-images
+  ./start-all.sh   # 交互式填写两组 LLM 参数后一键起全套；面板访问 http://localhost:8125
   ```
+  作者本人的「无 Docker 原生部署」脚本（local-deploy/）含本机密钥与个人数据，未随仓库公开；
+  完整部署文档（各 Agent 客户端接入、停止清理、端口说明）见 [INSTALL.md](./INSTALL.md)。
 - **不入库的内容**：运行时数据库、对话 jsonl、个人 session 元数据、`.env`、前端构建产物、`zzzz/`（个人草稿）等，均已写入 `.gitignore`，请勿提交。
 - **未做 / 待办**：L2/L3 personal 提炼、TCVDB 后端运行时探测 + tab 禁用、代码身份改名（npm scope 仍属方案 B，需发布权限）。
 
