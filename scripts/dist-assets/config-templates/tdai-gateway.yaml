@@ -1,0 +1,82 @@
+# ============================================================
+# MemoryCore 网关配置模板（原生 Node 部署）
+#
+# 本文件由 install.sh 从模板生成，占位符已替换为真实值。
+# 想改配置直接改 runtime/config/tdai-gateway.yaml，改完重启：./stop.sh && ./start.sh
+#
+# 运行方式（start.sh 内部使用）：
+#   node --import tsx src/gateway/server.ts
+# ============================================================
+
+deployMode: standalone
+stateBackend: local
+
+server:
+  port: 8420
+  host: 0.0.0.0
+
+data:
+  # 记忆库、L0 对话、L1/L2/L3 产物全部落在这里（SQLite）
+  baseDir: __ROOT_DIR__/runtime/data/core
+
+llm:
+  baseUrl: "__LLM_BASE_URL__"
+  apiKey: "__LLM_API_KEY__"
+  model: "__LLM_MODEL__"
+  maxTokens: 32000
+  timeoutMs: 300000
+
+memory:
+  # promptMode 说明：
+  #   code → 代码工程 / 团队协作场景（默认，能抽出"技术方案、约束、决策"类记忆）
+  #   chat → 个人对话 / 教学场景（日常聊天、问答，抽"偏好、背景、约定"类记忆）
+  # 配错的表现是"聊了很久但一条记忆都没抽出来"，换回 chat 再试。
+  promptMode: __PROMPT_MODE__
+  capture: { enabled: true }
+  extraction:
+    enabled: true
+    enableDedup: true
+    maxMemoriesPerSession: 20
+  persona:
+    triggerEveryN: 50
+    maxScenes: 15
+  pipeline:
+    everyNConversations: 5
+    enableWarmup: true
+    # L1 抽取的空闲触发阈值（秒）：会话静默这么久后自动跑一次提炼
+    l1IdleTimeoutSeconds: 600
+    # L2 场景归纳在 L1 完成后的延迟与最小间隔（秒）
+    l2DelayAfterL1Seconds: 90
+    l2MinIntervalSeconds: 900
+    l2MaxIntervalSeconds: 3600
+  recall:
+    enabled: true
+    maxResults: 5
+    scoreThreshold: 0.3
+    strategy: hybrid
+    timeoutMs: 5000
+  # 存储后端：sqlite（零依赖，推荐本地） | mongodb（需外部实例）
+  storeBackend: sqlite
+  embedding:
+    # none = 不启用向量检索，搜索走 SQLite FTS / BM25 全文检索。
+    # 零配置即可用；改用向量检索需在此配置 embedding provider 与密钥。
+    provider: none
+
+# ── Skill 模块（BM25 路由，本地队列，无需 Redis）──
+skill:
+  enabled: true
+  routing:
+    mode: bm25
+    searchTopK: 20
+  extraction:
+    enabled: true
+    maxIterations: 16
+    queue:
+      backend: local
+      keyPrefix: tdai
+      resultTtlSeconds: 86400
+      lockTtlMs: 600000
+      maxRetries: 2
+      retryBackoffsMs: [5000, 15000]
+  resources:
+    maxResourceSizeBytes: 5000000

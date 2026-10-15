@@ -1,0 +1,86 @@
+# ============================================================
+# MemoryProxy 配置模板（原生 Node 部署）
+#
+# MemoryProxy 是 coding agent（Claude Code / CodeBuddy / Codex 等）的
+# LLM 请求代理：auth → 选 team/agent/task → 注入记忆与技能 → 转发上游 LLM。
+#
+# 如果只是用面板管理记忆，可以不起这个服务；
+# 想让 Claude Code 之类的 agent 自动读写记忆，才需要它。
+#
+# 运行方式（start.sh 内部使用）：
+#   node --import tsx/esm src/index.ts --config runtime/config/proxy-config.yaml
+# ============================================================
+
+server:
+  host: 0.0.0.0
+  port: 8096
+  forwardTimeoutMs: 600000
+
+upstream:
+  # 上游 LLM —— coding agent 的请求最终转发到这里。
+  # 可以和 MemoryCore 用同一组，也可以换成更强的模型。
+  url: "__PROXY_UPSTREAM_URL__"
+  apiKey: "__PROXY_UPSTREAM_API_KEY__"
+  # model 由客户端请求体指定，这里不强制
+
+log:
+  file: ""
+  level: info
+  backend: console
+
+# 对接本机 memory-core（L2/L3 记忆注入 + L1 召回）
+tdai:
+  enabled: true
+  endpoint: "http://127.0.0.1:8420"
+  apiKey: "local"
+  serviceId: default
+  memory:
+    enabled: true
+    inject: true
+    writeL0: true
+    recallL1: true
+    injectL2L3: true
+
+skill:
+  endpoint: "http://127.0.0.1:8420"
+  serviceToken: "local"
+
+knowledge:
+  enabled: true
+  endpoint: "http://127.0.0.1:8420"
+  serviceToken: "local"
+  serviceId: default
+
+# auth / sessionInit：
+#   auth=false        → 不校验 user_key（本机单用户体验，最省事）
+#   sessionInit=false → 新会话不弹 team/agent/task 选择表单
+# 想体验完整的"每次会话选择团队/智能体/任务"流程，把这两个都改成 true。
+auth:
+  enabled: false
+  url: "http://127.0.0.1:8420"
+  timeoutMs: 5000
+
+sessionInit:
+  enabled: false
+  maxRetries: 3
+  injectAgentContext: true
+  injectTaskContext: true
+  headerAutoSelect:
+    enabled: true
+    teamHeader: "x-team-id"
+    agentHeader: "x-agent-id"
+    taskHeader: "x-task-id"
+    onMismatch: "form"
+
+costGuard:
+  enabled: false
+
+injection:
+  enabled: true
+  injectors:
+    - skill
+    - knowledge
+    - tdai-memory
+
+redis:
+  enabled: false

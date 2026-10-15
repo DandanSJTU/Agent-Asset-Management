@@ -1,0 +1,10 @@
+{
+  "instances": [
+    {
+      "id": "default",
+      "name": "default",
+      "gateway_endpoint": "http://127.0.0.1:8420",
+      "api_key": "local"
+    }
+  ]
+}
