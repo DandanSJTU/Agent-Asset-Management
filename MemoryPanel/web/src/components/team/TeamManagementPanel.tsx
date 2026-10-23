@@ -47,6 +47,7 @@ import './team-management-panel.css';
 import { MAX_IMPORTED_CHAT_MEMORIES, importedChatMemoryIds, type AgentCard } from './types';
 import { useAgentMountedCounts, syncChatMemoryBindings } from './useAgentAssets';
 import AgentGrid from './AgentGrid';
+import AssetStatsSection from './AssetStatsSection';
 import { TeamHeaderCard } from './TeamHeaderCard';
 import { MemberSection, AddMemberDialog, CreatedUserKeyModal } from './MemberSection';
 import CreateTeamDialog from './CreateTeamDialog';
@@ -71,6 +72,11 @@ export default function TeamManagementPanel({
    * 由 AgentsPage 传 false 关闭；恢复显示删掉该 prop 即可。
    */
   showAgentModules = true,
+  /**
+   * 是否在 team 头卡下方渲染「资产统计」（mem0 风格 Wiki / Skill / 对话记忆
+   * 指标卡 + 新增趋势 + 构成表）。由 AgentsPage（Agent 资产库 tab）开启。
+   */
+  showAssetStats = false,
 }: {
   currentUser: string;
   instanceId: string;
@@ -83,6 +89,8 @@ export default function TeamManagementPanel({
    */
   section?: 'members' | 'agents' | 'all';
   showAgentModules?: boolean;
+  /** team 头卡下方渲染「资产统计」（见 showAssetStats 解构注释） */
+  showAssetStats?: boolean;
 }) {
   const showMembers = section === 'members' || section === 'all';
   const showAgents = section === 'agents' || section === 'all';
@@ -285,6 +293,9 @@ export default function TeamManagementPanel({
         />
       ) : (
         <>
+          {/* === 资产统计（mem0 风格，Agent 资产库 tab 开启）=== */}
+          {showAssetStats && <AssetStatsSection teamId={activeTeam.team_id} />}
+
           {/* === Members === */}
           {showMembers && (
             <MemberSection

@@ -130,8 +130,34 @@ export function AssetItemId({ children }: { children: ReactNode }) {
 }
 
 /** 描述文本（2 行截断） */
-export function AssetItemDesc({ children }: { children: ReactNode }) {
+export function AssetItemDesc({ children }: { children?: ReactNode }) {
   return <p className="_alp-item-desc">{children}</p>;
+}
+
+/**
+ * 本地位置（服务端 storage_dir 相对路径）。
+ *
+ * 与右侧时间戳同处徽章行：`min-width:0` 让路径先被压缩，保证时间始终完整可见。
+ * label 可选（如「位置」），业务页按文案习惯决定是否带前缀。
+ */
+export function AssetItemPath({
+  label,
+  children,
+  title,
+}: {
+  label?: ReactNode;
+  children: ReactNode;
+  title?: string;
+}) {
+  return (
+    <span
+      className="_alp-item-path"
+      title={title ?? (typeof children === 'string' ? children : undefined)}
+    >
+      {label != null && <span className="_alp-item-path-label">{label}</span>}
+      <span className="_alp-item-path-value">{children}</span>
+    </span>
+  );
 }
 
 /** 徽章行容器 */
@@ -168,6 +194,10 @@ export function AssetItemMeta({ children }: { children: ReactNode }) {
 }
 
 /** 元信息右侧时间 */
-export function AssetItemTime({ children }: { children: ReactNode }) {
-  return <span className="_alp-item-time">{children}</span>;
+export function AssetItemTime({ children, title }: { children: ReactNode; title?: string }) {
+  return (
+    <span className="_alp-item-time" title={title}>
+      {children}
+    </span>
+  );
 }

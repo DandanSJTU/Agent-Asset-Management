@@ -177,3 +177,7 @@ docs/default-user-key.md
 /L1-L2-L3-*.html
 # 分享打包产物
 dist-share/
+
+# 本地 MCP 配置文件（含本机绝对路径与真实 team id，不入库；请参考 mcp.json.example 自建）
+agents/cursor/.cursor/mcp.json
+agents/chatgpt/mcp.json

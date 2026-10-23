@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { knowledgeApi, wikiProgressPercent, wikiStageLabel, type GraphData, type WikiDetail, type WikiPage, type SourceProviderMeta, type WikiCrawlOptions, type WikiSourceListResult } from '@/lib/api/knowledge-api';
+import { assetsApi } from '@/lib/teamApi';
 import { useTeams, useAgents } from '@/services';
 import { readAuth } from '@/components/LoginGate';
 import { tea, confirmThenRun } from '@/lib/tea-bridge';
@@ -15,7 +16,8 @@ export function useWikiSources() {
   const { t } = useTranslation();
   const [sources, setSources] = useState<WikiDetail[]>([]);
   const [loading, setLoading] = useState(false);
-  // 默认展示团队资产（team）。「Agent 资产」（fixed）入口已隐藏，仅保留 team 视角。
+  // 展示两档：「团队」= visibility=team 的团队 Wiki 池；「我的」= 团队空间内
+  // private 且 owner=我的 wiki。「Agent 资产」（fixed）入口仍隐藏。
   const [scopeTab, setScopeTab] = useState<WikiScopeTab>('team');
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -377,7 +379,58 @@ export function useWikiSources() {
       setSources([]);
     }
     try {
-      // 资产统一为团队维度（visibility=team），无 private/我的资产概念。
+      if (scopeTab === 'mine') {
+        // 「我的」= 团队空间内 **owner=我** 的 wiki（含已共享的 team + 仅我可见的 private）。
+        //
+        // 走 asset/list-accessible：不带 visibility 时返回"团队共享 + 我自己的 private"，
+        // 内核 SQL 层已挡掉他人 private，响应体里根本不包含；前端再按 owner=我 收敛
+        // （currentUser 缺失时不筛，退化为全部可访问，避免整档空白）。
+        // 该接口只有 meta 字段，故再逐条 /wiki/get 补 page_count / last_sync_at /
+        // internal_status 等 KS 字段（个人库量级小，N+1 可接受）。
+        const assets = (
+          await assetsApi.listAccessible(activeTeamId, {
+            asset_type: 'llm_wiki',
+            action: 'read',
+          })
+        ).filter((a) => !currentUser || a.owner_user_id === currentUser);
+        if (seq !== fetchSeqRef.current) return;
+        const enriched = await Promise.all(
+          assets.map(async (a) => {
+            // meta 的 visibility 补进详情：卡片要靠它区分「共享中 / 仅我可见」。
+            // meta 枚举比这里宽（task/agent/restricted 等），统一收敛成两态。
+            const vis: 'team' | 'private' = a.visibility === 'team' ? 'team' : 'private';
+            try {
+              const d = await knowledgeApi.wiki.get(a.asset_id);
+              return { ...d, visibility: vis };
+            } catch {
+              // KS 侧查不到（数据面缺失）时退化成 meta 兜底卡片，不让整档报错。
+              return {
+                visibility: vis,
+                wiki_id: a.asset_id,
+                team_id: a.team_id ?? '',
+                name: a.name,
+                source_type: null,
+                source_url: null,
+                service_url: null,
+                summary: a.description ?? null,
+                status: 'missing' as WikiDetail['status'],
+                internal_status: null,
+                sync_error: null,
+                version: '1',
+                owner_user_id: a.owner_user_id,
+                page_count: null,
+                last_sync_at: null,
+                created_at: a.created_at,
+                updated_at: a.updated_at ?? '',
+              };
+            }
+          }),
+        );
+        if (seq !== fetchSeqRef.current) return; // 已被后续请求取代
+        setSources(enriched);
+        return;
+      }
+      // 团队档：资产统一为团队维度（visibility=team）。
       // fixed tab 也是拿全量 team 资产，再按 fixedBoundIds 过滤。
       const d = await knowledgeApi.wiki.teamAssets(activeTeamId);
       if (seq !== fetchSeqRef.current) return; // 已被后续请求取代
@@ -389,7 +442,7 @@ export function useWikiSources() {
     } finally {
       if (seq === fetchSeqRef.current) setLoading(false);
     }
-  }, [activeTeamId, scopeTab]);
+  }, [activeTeamId, scopeTab, currentUser]);
 
   // 触发 fetchSources：依赖原始参数 + fetchSources，并用 key 去重防止短时间内重复触发。
   const fetchKeyRef = useRef<string>('');
@@ -649,6 +702,13 @@ export function useWikiSources() {
         setFormCredential({});
       }
 
+      // 「我的」档下新建：后端 ensureKnowledgeAsset 硬编码 visibility='team'，
+      // 面板也没有可见性参数，故创建后补一次 update 改回 private
+      // （wiki 的 asset_id === wiki_id，可直接按 id 更新）。
+      if (scopeTab === 'mine') {
+        await assetsApi.update(detail.wiki_id, { visibility: 'private' });
+      }
+
       tea.notify.success(t('wiki.notify.created', { name: newName.trim() }));
       setShowCreate(false);
       setNewName('');
@@ -662,6 +722,28 @@ export function useWikiSources() {
       setSubmitting(false);
     }
   };
+
+  /**
+   * 共享 / 设为私密切换（仅 owner 可操作）：
+   *   - 在「我的」档把私密 wiki 共享到团队后，条目会迁到「团队」档；
+   *   - 反向同理。切完重新拉当前档，让迁移即时可见。
+   * 私密 wiki 不提供「分配到 Agent」——分配给 Agent 后，使用该 Agent 的其他成员
+   * 就能读到内容，等于绕过 private。
+   */
+  const handleToggleVisibility = useCallback(
+    async (wikiId: string, next: 'team' | 'private') => {
+      try {
+        await assetsApi.update(wikiId, { visibility: next });
+        tea.notify.success(
+          next === 'team' ? t('wiki.notify.shared') : t('wiki.notify.privatized'),
+        );
+        void fetchSources();
+      } catch (e: unknown) {
+        tea.notify.error((e instanceof Error ? e.message : String(e)) || t('wiki.notify.scopeFailed'));
+      }
+    },
+    [fetchSources, t],
+  );
 
   /** 所有正在 ingest（pending / processing）的 wiki_id 集合，用于列表中逐卡片判断按钮状态。 */
   const runningWikiIds = useMemo(
@@ -1137,6 +1219,7 @@ export function useWikiSources() {
     fetchDetail,
     handleUnbindWiki,
     handleCreate,
+    handleToggleVisibility,
     // 外部来源（iWiki 等）
     formSourceType,
     setFormSourceType,

@@ -1,0 +1,252 @@
+/* AiCollabPage styles — 「AI 协作」记忆资产对比演示（暗色主题） */
+._aic-page {
+  padding: 20px 24px 48px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ===== Header ===== */
+._aic-header {
+  margin-bottom: 16px;
+}
+._aic-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+._aic-title {
+  font-size: 20px;
+}
+._aic-demo-badge {
+  display: inline-block;
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 10px;
+  color: #f0c14b;
+  background: rgba(240, 193, 75, 0.12);
+  border: 1px solid rgba(240, 193, 75, 0.35);
+  letter-spacing: 0.04em;
+}
+._aic-subtitle {
+  display: block;
+  margin-top: 6px;
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+/* ===== 控制区 ===== */
+._aic-control-card {
+  margin-bottom: 16px;
+}
+._aic-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+._aic-label {
+  font-size: 13px;
+}
+._aic-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--tea-border-color, rgba(255, 255, 255, 0.15));
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: inherit;
+  outline: none;
+}
+._aic-textarea:focus {
+  border-color: #f0c14b;
+}
+._aic-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+._aic-toggles {
+  display: flex;
+  gap: 10px;
+}
+._aic-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+._aic-toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.15s ease;
+}
+._aic-toggle.is-on {
+  border-color: rgba(240, 193, 75, 0.55);
+  background: rgba(240, 193, 75, 0.12);
+  color: #f0c14b;
+}
+._aic-toggle.is-on ._aic-toggle-dot {
+  background: #f0c14b;
+  box-shadow: 0 0 6px rgba(240, 193, 75, 0.7);
+}
+._aic-toggle.is-off {
+  opacity: 0.6;
+}
+
+/* ===== 错误 / 空态 ===== */
+._aic-error-card,
+._aic-empty-card {
+  margin-bottom: 16px;
+}
+
+/* ===== 双栏对比 ===== */
+._aic-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 920px) {
+  ._aic-compare {
+    grid-template-columns: 1fr;
+  }
+}
+._aic-col {
+  display: flex;
+  flex-direction: column;
+}
+._aic-col-enhanced {
+  border-color: rgba(240, 193, 75, 0.4);
+}
+._aic-col-head {
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+}
+._aic-col-hint {
+  display: block;
+  margin: 4px 0 10px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+._aic-answer {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+  line-height: 1.75;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex: 1;
+}
+._aic-answer-enhanced {
+  background: rgba(240, 193, 75, 0.06);
+  border-color: rgba(240, 193, 75, 0.22);
+}
+._aic-metrics {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ===== 检索轨迹 ===== */
+._aic-retrieval {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+}
+._aic-retrieval-label {
+  font-size: 12px;
+}
+._aic-retrieval-empty {
+  font-size: 12px;
+}
+._aic-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+._aic-chip {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(240, 193, 75, 0.14);
+  color: #f0c14b;
+  border: 1px solid rgba(240, 193, 75, 0.3);
+}
+._aic-expand-btn {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* ===== 资产明细 ===== */
+._aic-asset-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+._aic-asset-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+._aic-asset-type {
+  flex: 0 0 auto;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+._aic-type-memory {
+  background: rgba(90, 160, 255, 0.16);
+  color: #8cc0ff;
+}
+._aic-type-skill {
+  background: rgba(240, 193, 75, 0.16);
+  color: #f0c14b;
+}
+._aic-type-wiki {
+  background: rgba(120, 220, 160, 0.16);
+  color: #8fe0b0;
+}
+._aic-asset-body {
+  font-size: 12px;
+  line-height: 1.6;
+  opacity: 0.88;
+}
+._aic-asset-score {
+  opacity: 0.6;
+  font-size: 11px;
+}

@@ -1,0 +1,26 @@
+# 团队记忆检索指引（team-7xulumcvyl）
+
+你可以通过 **team7-memory** MCP 服务器，检索推荐策略组 4 位真实成员的对话记忆 / Skill / Wiki。
+先判断任务属于哪一类，再选对应工具；一轮检索类调用合计不超过 3 次，避免反复瞎搜。
+
+## 成员与角色（member 参数取值）
+- `product` = 产品（agent: agt-rec-product）
+- `engineering` = 工程（agent: agt-ar4478rrd5）
+- `algorithm` = 算法（agent: agt-ar6gyp3yv7）
+- `qa` = 质量（agent: agt-ar6z1agmqn）
+- `all` = 对 4 位成员分别检索并合并（结果带 member 标签，便于溯源）
+
+## 工具选用策略
+1. 回忆「用户/团队的偏好、规则、历史事件、事实」→ `memory_search(query, member="all")`（L1 原子记忆）
+2. 核对「原始对话原文 / 上下文」→ `conversation_search(query, member=...)`
+3. 找「某类任务的可复用 SOP / 执行配方」→ `skill_search(query, scope="team")`（跨成员团队级）
+4. 查「团队关于 X 的官方定义 / 流程 / 规范」→ 先 `wiki_list(wiki_id)` 拿 id，再 `wiki_search(wiki_id, query)`
+5. 读某成员长期画像 / 原则 → `persona_read(member=...)`（L3）
+6. 读某场景块全文 → 先用 `list_scenarios(member=...)` 拿路径，再 `scene_read(path, member=...)`（L2）
+7. 读某个 Skill 的 SKILL.md → `skill_view(skill_id, member=...)`
+
+## 行为约定
+- 不确定归属哪位成员时，优先 `member="all"` 做团队级扇出。
+- 检索命中后，需要正文再二次调用 `scene_read` / `skill_view` / `wiki_read`，不要一次性拉全量。
+- 记忆服务不可用时（工具返回 error），在回复里说明并继续，不要反复重试。
+- **复合任务三类同调**：当问题同时涉及「回顾团队结论 + 复用 SOP + 查官方口径/规范」时，应**同时**调用 `memory_search`（对话记忆）、`skill_search`（skill）、`wiki_search`（wiki）三类工具，再综合回答，不要只取一类。若用户明确要求"同时调用记忆、skill、wiki"，则必须三类都检索。

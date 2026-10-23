@@ -214,8 +214,10 @@ export function fetchSessions(signal?: AbortSignal): Promise<SessionListResponse
   return psGet<SessionListResponse>('/sessions', signal);
 }
 
-export function fetchSessionFacts(id: string, signal?: AbortSignal): Promise<SessionFactsResponse> {
-  return psGet<SessionFactsResponse>(`/facts?id=${encodeURIComponent(id)}`, signal);
+/** vendor 可选：多 vendor（workbuddy / codex…）下 sessionId 可能重名，带上可精确命中。 */
+export function fetchSessionFacts(id: string, signal?: AbortSignal, vendor?: string): Promise<SessionFactsResponse> {
+  const q = `/facts?id=${encodeURIComponent(id)}${vendor ? `&vendor=${encodeURIComponent(vendor)}` : ''}`;
+  return psGet<SessionFactsResponse>(q, signal);
 }
 
 /** M4b · 取会话真实消息（「从对话洞察导入对话」源数据）
@@ -234,8 +236,9 @@ export interface SessionRecordsResponse {
   messages: SessionRecordMessage[];
 }
 
-export function fetchSessionRecords(id: string, signal?: AbortSignal): Promise<SessionRecordsResponse> {
-  return psGet<SessionRecordsResponse>(`/records?id=${encodeURIComponent(id)}`, signal);
+export function fetchSessionRecords(id: string, signal?: AbortSignal, vendor?: string): Promise<SessionRecordsResponse> {
+  const q = `/records?id=${encodeURIComponent(id)}${vendor ? `&vendor=${encodeURIComponent(vendor)}` : ''}`;
+  return psGet<SessionRecordsResponse>(q, signal);
 }
 
 export function fetchHandoff(id: string, signal?: AbortSignal): Promise<HandoffResponse> {

@@ -1,0 +1,212 @@
+{
+  "seeded_at": "2026-10-16T18:34:03.550Z",
+  "mode": "bind",
+  "teamIds": [],
+  "userIds": [],
+  "agentIds": [
+    "agt-rec-product"
+  ],
+  "agentReusedIds": [
+    "agt-ar4478rrd5",
+    "agt-ar6gyp3yv7",
+    "agt-ar6z1agmqn"
+  ],
+  "agentRestores": [
+    {
+      "agentId": "agt-ar4478rrd5",
+      "name": "default-agent-PengShi",
+      "description": "默认助手，可处理通用开发任务与日常协作。",
+      "prompt": "",
+      "metadata_json": "{\"ui\":{\"role_prompt\":\"\",\"rules_prompt\":\"\"}}"
+    },
+    {
+      "agentId": "agt-ar6gyp3yv7",
+      "name": "default-agent-PengChengZhuo",
+      "description": "默认助手，可处理通用开发任务与日常协作。",
+      "prompt": "",
+      "metadata_json": "{\"ui\":{\"role_prompt\":\"\",\"rules_prompt\":\"\"}}"
+    },
+    {
+      "agentId": "agt-ar6z1agmqn",
+      "name": "default-agent-YaoYao",
+      "description": "默认助手，可处理通用开发任务与日常协作。",
+      "prompt": "",
+      "metadata_json": "{\"ui\":{\"role_prompt\":\"\",\"rules_prompt\":\"\"}}"
+    }
+  ],
+  "memoryIds": [
+    "product-rec-001",
+    "product-rec-002",
+    "product-rec-003",
+    "product-rec-004",
+    "product-rec-101",
+    "product-rec-102",
+    "product-rec-103",
+    "product-rec-104",
+    "product-rec-201",
+    "product-rec-202",
+    "product-rec-203",
+    "product-rec-204",
+    "product-rec-205",
+    "product-rec-206",
+    "engineering-rec-001",
+    "engineering-rec-002",
+    "engineering-rec-003",
+    "engineering-rec-004",
+    "engineering-rec-005",
+    "engineering-rec-101",
+    "engineering-rec-102",
+    "engineering-rec-103",
+    "engineering-rec-104",
+    "engineering-rec-201",
+    "engineering-rec-202",
+    "engineering-rec-203",
+    "engineering-rec-204",
+    "algorithm-rec-001",
+    "algorithm-rec-002",
+    "algorithm-rec-003",
+    "algorithm-rec-004",
+    "algorithm-rec-005",
+    "algorithm-rec-101",
+    "algorithm-rec-102",
+    "algorithm-rec-103",
+    "algorithm-rec-104",
+    "algorithm-rec-105",
+    "algorithm-rec-201",
+    "algorithm-rec-202",
+    "algorithm-rec-203",
+    "algorithm-rec-204",
+    "qa-rec-001",
+    "qa-rec-002",
+    "qa-rec-003",
+    "qa-rec-004",
+    "qa-rec-101",
+    "qa-rec-102",
+    "qa-rec-103",
+    "qa-rec-104",
+    "qa-rec-201",
+    "qa-rec-202",
+    "qa-rec-203",
+    "qa-rec-204"
+  ],
+  "skillIds": [
+    "skl-product-rec-ab-experiment-review",
+    "skl-product-rec-metric-caliber-guard",
+    "skl-product-rec-recsys-spec-writer",
+    "skl-engineering-rec-eagleconf-change-guard",
+    "skl-engineering-rec-online-incident-triage",
+    "skl-engineering-rec-recall-service-codegen",
+    "skl-algorithm-rec-ab-experiment-analysis",
+    "skl-algorithm-rec-rank-model-iteration",
+    "skl-algorithm-rec-recall-channel-tuning",
+    "skl-qa-rec-badcase-triage",
+    "skl-qa-rec-evals-suite-authoring",
+    "skl-qa-rec-release-gate-check"
+  ],
+  "skillRowIds": [
+    "wmlnqBpGPMc5",
+    "LuQKIVZN2wWi",
+    "2WzDqphLOgtu",
+    "eA1mcXjWfbWE",
+    "R45wBu0q5SFM",
+    "HkS8G3aUtJbd",
+    "t9ungeIJtSQi",
+    "fPkpzgPiTSxP",
+    "0XVcknXpINVv",
+    "wfSCp1ac8Ze9",
+    "S0ek05WRwsnS",
+    "D4ZuKejNmlKf"
+  ],
+  "skillDirs": [
+    "local-deploy/data/core/skills/skl-product-rec-ab-experiment-review",
+    "local-deploy/data/core/skills/skl-product-rec-metric-caliber-guard",
+    "local-deploy/data/core/skills/skl-product-rec-recsys-spec-writer",
+    "local-deploy/data/core/skills/skl-engineering-rec-eagleconf-change-guard",
+    "local-deploy/data/core/skills/skl-engineering-rec-online-incident-triage",
+    "local-deploy/data/core/skills/skl-engineering-rec-recall-service-codegen",
+    "local-deploy/data/core/skills/skl-algorithm-rec-ab-experiment-analysis",
+    "local-deploy/data/core/skills/skl-algorithm-rec-rank-model-iteration",
+    "local-deploy/data/core/skills/skl-algorithm-rec-recall-channel-tuning",
+    "local-deploy/data/core/skills/skl-qa-rec-badcase-triage",
+    "local-deploy/data/core/skills/skl-qa-rec-evals-suite-authoring",
+    "local-deploy/data/core/skills/skl-qa-rec-release-gate-check"
+  ],
+  "profileDirs": [
+    "local-deploy/data/core/profiles/team%3Ateam-7xulumcvyl%7Cagent%3Aagt-rec-product",
+    "local-deploy/data/core/profiles/team%3Ateam-7xulumcvyl%7Cagent%3Aagt-ar4478rrd5",
+    "local-deploy/data/core/profiles/team%3Ateam-7xulumcvyl%7Cagent%3Aagt-ar6gyp3yv7",
+    "local-deploy/data/core/profiles/team%3Ateam-7xulumcvyl%7Cagent%3Aagt-ar6z1agmqn"
+  ],
+  "wikiIds": [
+    "wiki-rec-shared",
+    "wiki-rec-product",
+    "wiki-rec-engineering",
+    "wiki-rec-algorithm",
+    "wiki-rec-qa"
+  ],
+  "wikiDirs": [
+    "local-deploy/data/knowledge/default/team-7xulumcvyl/wiki-rec-shared",
+    "local-deploy/data/knowledge/default/team-7xulumcvyl/wiki-rec-product",
+    "local-deploy/data/knowledge/default/team-7xulumcvyl/wiki-rec-engineering",
+    "local-deploy/data/knowledge/default/team-7xulumcvyl/wiki-rec-algorithm",
+    "local-deploy/data/knowledge/default/team-7xulumcvyl/wiki-rec-qa"
+  ],
+  "assetIds": [
+    "skl-product-rec-ab-experiment-review",
+    "skl-product-rec-metric-caliber-guard",
+    "skl-product-rec-recsys-spec-writer",
+    "skl-engineering-rec-eagleconf-change-guard",
+    "skl-engineering-rec-online-incident-triage",
+    "skl-engineering-rec-recall-service-codegen",
+    "skl-algorithm-rec-ab-experiment-analysis",
+    "skl-algorithm-rec-rank-model-iteration",
+    "skl-algorithm-rec-recall-channel-tuning",
+    "skl-qa-rec-badcase-triage",
+    "skl-qa-rec-evals-suite-authoring",
+    "skl-qa-rec-release-gate-check",
+    "wiki-rec-shared",
+    "wiki-rec-product",
+    "wiki-rec-engineering",
+    "wiki-rec-algorithm",
+    "wiki-rec-qa",
+    "chat_memory-team-7xulumcvyl-agt-rec-product",
+    "chat_memory-team-7xulumcvyl-agt-ar4478rrd5",
+    "chat_memory-team-7xulumcvyl-agt-ar6gyp3yv7",
+    "chat_memory-team-7xulumcvyl-agt-ar6z1agmqn"
+  ],
+  "fixedAssetKeys": [
+    "agt-rec-product::skl-product-rec-ab-experiment-review",
+    "agt-rec-product::skl-product-rec-metric-caliber-guard",
+    "agt-rec-product::skl-product-rec-recsys-spec-writer",
+    "agt-ar4478rrd5::skl-engineering-rec-eagleconf-change-guard",
+    "agt-ar4478rrd5::skl-engineering-rec-online-incident-triage",
+    "agt-ar4478rrd5::skl-engineering-rec-recall-service-codegen",
+    "agt-ar6gyp3yv7::skl-algorithm-rec-ab-experiment-analysis",
+    "agt-ar6gyp3yv7::skl-algorithm-rec-rank-model-iteration",
+    "agt-ar6gyp3yv7::skl-algorithm-rec-recall-channel-tuning",
+    "agt-ar6z1agmqn::skl-qa-rec-badcase-triage",
+    "agt-ar6z1agmqn::skl-qa-rec-evals-suite-authoring",
+    "agt-ar6z1agmqn::skl-qa-rec-release-gate-check",
+    "agt-rec-product::wiki-rec-product",
+    "agt-ar4478rrd5::wiki-rec-engineering",
+    "agt-ar6gyp3yv7::wiki-rec-algorithm",
+    "agt-ar6z1agmqn::wiki-rec-qa"
+  ],
+  "assetRestores": [
+    {
+      "assetId": "chat_memory-team-7xulumcvyl-agt-ar4478rrd5",
+      "name": "Memory of default-agent-PengShi",
+      "visibility": "private"
+    },
+    {
+      "assetId": "chat_memory-team-7xulumcvyl-agt-ar6gyp3yv7",
+      "name": "Memory of default-agent-PengChengZhuo",
+      "visibility": "private"
+    },
+    {
+      "assetId": "chat_memory-team-7xulumcvyl-agt-ar6z1agmqn",
+      "name": "Memory of default-agent-YaoYao",
+      "visibility": "private"
+    }
+  ]
+}

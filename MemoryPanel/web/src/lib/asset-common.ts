@@ -15,8 +15,16 @@ export type StatusFilter = 'all' | 'ready' | 'processing' | 'error';
 /** 资产页子视图：列表 / 详情 */
 export type SubView = 'list' | 'detail';
 
-/** 资产作用域：团队池 / 固定资产 */
-export type ScopeTab = 'team' | 'fixed';
+/**
+ * 资产作用域：
+ *   - team  团队池（visibility=team，全团队可见）
+ *   - mine  我的（团队空间内 visibility=private 且 owner=我的资产）
+ *   - fixed 固定资产（单个 agent 名下绑定；入口已隐藏，保留为死分支）
+ *
+ * 注意 mine ≠ 侧边栏「个人空间」：后者是 team_id='personal' 的独立命名空间，
+ * 与团队空间内的 private 资产不是同一份数据。
+ */
+export type ScopeTab = 'team' | 'mine' | 'fixed';
 
 /**
  * ISO 时间字符串 → 面板展示格式（本地时区，'MM/DD HH:MM'）。

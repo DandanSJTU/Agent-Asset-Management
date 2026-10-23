@@ -65,11 +65,12 @@ function serializeForLog(value: unknown): string {
   }
 }
 
-/** 内核 HTTP 调用失败（网络/超时/无效信封）。 */
+/** 内核 HTTP 调用失败（网络/超时/无效信封）。transient=true 时可重试。 */
 export class KernelFetchError extends Error {
   constructor(
     readonly code: number,
     message: string,
+    readonly transient = true,
   ) {
     super(message);
     this.name = 'KernelFetchError';
@@ -144,95 +145,120 @@ export async function executeMetaFetch<T>(
     request_id: reqId,
     requestBody: serializeForLog(body ?? {}),
   });
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      [META_HEADER_SERVICE_ID]: cfg.serviceId,
-      [META_HEADER_REQUEST_ID]: reqId,
-    };
-    if (cfg.apiKey) headers.Authorization = `Bearer ${cfg.apiKey}`;
-    if (cfg.userKey) headers[META_HEADER_USER_KEY] = cfg.userKey;
-    if (cfg.extraHeaders) Object.assign(headers, cfg.extraHeaders);
-    const resp = await fetch(`${base}${path}`, {
-      method,
-      headers,
-      ...(method === 'POST' ? { body: JSON.stringify(body ?? {}) } : {}),
-      signal: ctrl.signal,
-    });
-    const env = (await resp.json().catch(() => null)) as RawEnvelope<unknown> | null;
-    if (!env || typeof env.code !== 'number') {
-      const err = new KernelFetchError(502, `invalid envelope from ${path} (http ${resp.status})`);
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    [META_HEADER_SERVICE_ID]: cfg.serviceId,
+    [META_HEADER_REQUEST_ID]: reqId,
+  };
+  if (cfg.apiKey) headers.Authorization = `Bearer ${cfg.apiKey}`;
+  if (cfg.userKey) headers[META_HEADER_USER_KEY] = cfg.userKey;
+  if (cfg.extraHeaders) Object.assign(headers, cfg.extraHeaders);
+
+  // 内核转发偶发瞬时故障（undici keep-alive 长连接失效 / 上游连接抖动 → fetch failed /
+  // 超时）会冒泡成 502/504。业务错误（信封 code≠0）是确定性的、不可重试，必须立即
+  // 透传；仅对网络层瞬时故障重试（最多 2 次，指数退避 200/400ms），自愈后不影响体验。
+  const MAX_RETRIES = 2;
+  let lastErr: KernelFetchError | undefined;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const attemptStart = Date.now();
+    try {
+      const resp = await fetch(`${base}${path}`, {
+        method,
+        headers,
+        ...(method === 'POST' ? { body: JSON.stringify(body ?? {}) } : {}),
+        signal: ctrl.signal,
+      });
+      const env = (await resp.json().catch(() => null)) as RawEnvelope<unknown> | null;
+      if (!env || typeof env.code !== 'number') {
+        // 无效信封（非 JSON / 结构异常）= 上游瞬时故障，可重试。
+        const err = new KernelFetchError(502, `invalid envelope from ${path} (http ${resp.status})`);
+        logRemoteMeta(log, 'error', reqId, {
+          path,
+          request_id: reqId,
+          durationMs: Date.now() - attemptStart,
+          httpStatus: resp.status,
+          error: err.message,
+        });
+        throw err;
+      }
+      const envelope: MetaEnvelope<unknown> = {
+        code: env.code,
+        message: env.message ?? (env.code === 0 ? 'ok' : `error ${env.code}`),
+        request_id: env.request_id ?? reqId,
+        data: (env.data ?? {}) as unknown,
+      };
+      if (mode === 'envelope') {
+        if (env.code !== 0) {
+          logRemoteMeta(log, 'error', envelope.request_id, {
+            path,
+            request_id: envelope.request_id,
+            durationMs: Date.now() - attemptStart,
+            envelopeCode: env.code,
+            envelopeMessage: envelope.message,
+          });
+        } else {
+          logRemoteMeta(log, 'response', envelope.request_id, {
+            path,
+            durationMs: Date.now() - attemptStart,
+            request_id: envelope.request_id,
+            responseBody: serializeForLog(env.data ?? {}),
+          });
+        }
+        return envelope as T;
+      }
+      if (env.code !== 0) {
+        // 业务错误：确定性、不可重试，transient=false 直接抛出。
+        const err = new KernelFetchError(env.code, envelope.message, false);
+        logRemoteMeta(log, 'error', envelope.request_id, {
+          path,
+          request_id: envelope.request_id,
+          durationMs: Date.now() - attemptStart,
+          envelopeCode: env.code,
+          envelopeMessage: envelope.message,
+          error: err.message,
+        });
+        throw err;
+      }
+      logRemoteMeta(log, 'response', envelope.request_id, {
+        path,
+        durationMs: Date.now() - attemptStart,
+        request_id: envelope.request_id,
+        responseBody: serializeForLog(env.data ?? {}),
+      });
+      return (env.data ?? {}) as T;
+    } catch (err) {
+      clearTimeout(timer);
+      // 业务错误（transient=false）直接冒泡，不参与重试。
+      if (err instanceof KernelFetchError && !err.transient) throw err;
+      const message =
+        err instanceof KernelFetchError
+          ? err.message
+          : `remote metadata call failed at ${path}: ${(err as Error).message}`;
+      const code = err instanceof KernelFetchError ? err.code : 502;
+      lastErr = new KernelFetchError(code, message);
+      if (attempt < MAX_RETRIES) {
+        logRemoteMeta(log, 'error', reqId, {
+          path,
+          request_id: reqId,
+          durationMs: Date.now() - attemptStart,
+          envelopeCode: code,
+          error: `retry ${attempt + 1}/${MAX_RETRIES}: ${message}`,
+        });
+        await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
+        continue;
+      }
       logRemoteMeta(log, 'error', reqId, {
         path,
         request_id: reqId,
         durationMs: Date.now() - startedAt,
-        httpStatus: resp.status,
-        error: err.message,
+        envelopeCode: code,
+        error: message,
       });
-      throw err;
+      throw lastErr;
     }
-    const envelope: MetaEnvelope<unknown> = {
-      code: env.code,
-      message: env.message ?? (env.code === 0 ? 'ok' : `error ${env.code}`),
-      request_id: env.request_id ?? reqId,
-      data: (env.data ?? {}) as unknown,
-    };
-    if (mode === 'envelope') {
-      if (env.code !== 0) {
-        logRemoteMeta(log, 'error', envelope.request_id, {
-          path,
-          request_id: envelope.request_id,
-          durationMs: Date.now() - startedAt,
-          envelopeCode: env.code,
-          envelopeMessage: envelope.message,
-        });
-      } else {
-        logRemoteMeta(log, 'response', envelope.request_id, {
-          path,
-          durationMs: Date.now() - startedAt,
-          request_id: envelope.request_id,
-          responseBody: serializeForLog(env.data ?? {}),
-        });
-      }
-      return envelope as T;
-    }
-    if (env.code !== 0) {
-      const err = new KernelFetchError(env.code, envelope.message);
-      logRemoteMeta(log, 'error', envelope.request_id, {
-        path,
-        request_id: envelope.request_id,
-        durationMs: Date.now() - startedAt,
-        envelopeCode: env.code,
-        envelopeMessage: envelope.message,
-        error: err.message,
-      });
-      throw err;
-    }
-    logRemoteMeta(log, 'response', envelope.request_id, {
-      path,
-      durationMs: Date.now() - startedAt,
-      request_id: envelope.request_id,
-      responseBody: serializeForLog(env.data ?? {}),
-    });
-    return (env.data ?? {}) as T;
-  } catch (err) {
-    if (err instanceof KernelFetchError) throw err;
-    const isTimeout = (err as { name?: string }).name === 'AbortError';
-    const message = isTimeout
-      ? `remote metadata timeout at ${path}`
-      : `remote metadata call failed at ${path}: ${(err as Error).message}`;
-    const code = isTimeout ? 504 : 502;
-    logRemoteMeta(log, 'error', reqId, {
-      path,
-      durationMs: Date.now() - startedAt,
-      request_id: reqId,
-      envelopeCode: code,
-      error: message,
-    });
-    throw new KernelFetchError(code, message);
-  } finally {
-    clearTimeout(timer);
   }
+  throw lastErr ?? new KernelFetchError(502, `remote metadata call failed at ${path}`);
 }

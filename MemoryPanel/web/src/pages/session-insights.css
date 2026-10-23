@@ -4,8 +4,8 @@
  * 颜色回落到 tea-component CSS 变量，保证与控制台其他页面视觉一致。
  */
 
-/* ===== 筛选行（facet 触发器 + ViewSwitch） ===== */
-.sim-frow {
+/* ===== 工具行（筛选器 + 搜索框 + 视图切换） ===== */
+.sim-toolbar {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -59,8 +59,8 @@
   padding: 0 4px;
 }
 
-/* ===== 搜索行（chips + SearchBox） ===== */
-.sim-searchrow {
+/* ===== 已选条件 chips ===== */
+.sim-chipsrow {
   display: flex;
   align-items: center;
   gap: 8px;

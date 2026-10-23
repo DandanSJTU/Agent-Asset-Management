@@ -97,6 +97,34 @@ export class PersonalSourceSessionStore {
     this.persist();
   }
 
+  /**
+   * 写入/回填源会话身份（vendor + session_id）。
+   *
+   * 背景（2026-10-16 修复）：status 类方法只接收 sourceKey，新建记录时
+   * `vendor`/`session_id` 恒为空 —— 首次提炼的会话在源会话列表里退化成
+   * 无 ID 的「幽灵行」（UI 无法选择、无法做增量探测、无法回显标题）。
+   * 必须在任何 status 变更**之前**调用本方法建立身份。
+   *
+   * 幂等：已有记录且身份完整时不动；身份为空时回填（用于修复历史幽灵行）。
+   */
+  ensureIdentity(sourceKey: string, vendor: string, sessionId: string): void {
+    if (!vendor && !sessionId) return;
+    const cur = this.get(sourceKey);
+    if (cur && cur.session_id && cur.vendor) return;
+    this.upsert({
+      ...(cur ?? ({} as SourceSessionRecord)),
+      source_key: sourceKey,
+      vendor: vendor || cur?.vendor || '',
+      session_id: sessionId || cur?.session_id || '',
+      status: cur?.status ?? 'never',
+      cursor_record_index: cur?.cursor_record_index ?? 0,
+      l0_count: cur?.l0_count ?? 0,
+      l1_count: cur?.l1_count ?? 0,
+      l2_count: cur?.l2_count ?? 0,
+      l3_count: cur?.l3_count ?? 0,
+    });
+  }
+
   /** Mark running + record the active job id. */
   markRunning(sourceKey: string, jobId: string): void {
     const cur = this.get(sourceKey);

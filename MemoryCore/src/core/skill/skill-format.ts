@@ -14,11 +14,16 @@
  *   - REQUIRED: name, description.
  *   - OPTIONAL: category, created_at, updated_at, source, resources[].
  *
- * Limits (locked in M3):
+ * Limits:
  *   - name      : 1..64 chars, ^[a-z0-9][a-z0-9-]*$
  *   - description: 1..1024 chars
- *   - body      : ≤50_000 chars
+ *   - body      : ≤500_000 chars
  *   - resources[*].type ∈ {text, executable, binary}
+ *
+ * body 上限 2026-10-16 由 50_000 放宽到 500_000：原 50K 是为「LLM 生成 skill」
+ * （M6 reviewer 输出）设定的，但「从本地导入」要把用户既有的本地 skill 原样落库，
+ * 其中不少把全部调用代码内嵌在 SKILL.md（实测本机 475 个本地 skill 最大 body ≈160K，
+ * 共 11 个 >50K）。50K 会让这些大 skill 直接被拒（前端表现为 502）。
  */
 
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
@@ -26,7 +31,7 @@ import type { SkillFile } from "./types.js";
 
 const NAME_MAX = 64;
 const DESCRIPTION_MAX = 1024;
-const BODY_MAX = 50_000;
+const BODY_MAX = 500_000;
 const NAME_REGEX = /^[a-z0-9][a-z0-9-]*$/;
 const RESOURCE_TYPES = new Set(["text", "executable", "binary"]);
 

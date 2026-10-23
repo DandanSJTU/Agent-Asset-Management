@@ -16,6 +16,13 @@ interface AssetSplitLayoutProps {
   detail: ReactNode;
   /** 拖拽宽度的持久化 key（不同页面互不干扰）；不传则不持久化 */
   storageKey?: string;
+  /**
+   * 左栏初始宽度（px）。仅在无本地记忆值时生效，仍受 [MIN_SIDEBAR, MAX_SIDEBAR] 约束。
+   * 用途：列表项字段较多（如技能列表的名称/描述/最近修改/本地位置四列）时，
+   * 默认 280px 会把字段挤成多行；传入更宽的值让首屏就有舒适的排版。
+   * 不传 = 沿用 DEFAULT_SIDEBAR，其他资产页行为不变。
+   */
+  defaultWidth?: number;
 }
 
 const MIN_SIDEBAR = 220;
@@ -26,20 +33,23 @@ function clampWidth(w: number): number {
   return Math.min(MAX_SIDEBAR, Math.max(MIN_SIDEBAR, w));
 }
 
-function readStoredWidth(storageKey?: string): number {
-  if (!storageKey) return DEFAULT_SIDEBAR;
+function readStoredWidth(storageKey?: string, defaultWidth?: number): number {
+  const fallback = clampWidth(defaultWidth ?? DEFAULT_SIDEBAR);
+  if (!storageKey) return fallback;
   try {
     const raw = window.localStorage.getItem(storageKey);
     const parsed = raw ? Number(raw) : NaN;
-    return Number.isFinite(parsed) ? clampWidth(parsed) : DEFAULT_SIDEBAR;
+    return Number.isFinite(parsed) ? clampWidth(parsed) : fallback;
   } catch {
-    return DEFAULT_SIDEBAR;
+    return fallback;
   }
 }
 
-export function AssetSplitLayout({ sidebar, detail, storageKey }: AssetSplitLayoutProps) {
+export function AssetSplitLayout({ sidebar, detail, storageKey, defaultWidth }: AssetSplitLayoutProps) {
   const { t } = useTranslation();
-  const [sidebarWidth, setSidebarWidth] = useState<number>(() => readStoredWidth(storageKey));
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() =>
+    readStoredWidth(storageKey, defaultWidth),
+  );
   const [dragging, setDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

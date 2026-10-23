@@ -1,0 +1,266 @@
+/**
+ * MemberAssetMatrix 样式 — 成员 × 资产矩阵（团队资产统计）。
+ * 颜色复用面板三色：wiki 蓝 #4c8bf5 / skill 紫 #8b5cf6 / memory 青 #14b8a6。
+ * 全部走 _mamat-* 命名空间，不污染 _astats-*。浅色主题。
+ */
+
+._mamat-wrap {
+  border: 1px solid var(--tea-color-border-primary-default);
+  border-radius: 6px;
+  background: var(--tea-color-bg-primary-default);
+  padding: 12px 14px;
+  min-width: 0;
+}
+
+._mamat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+._mamat-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tea-color-text-primary);
+}
+
+._mamat-sorthint {
+  font-size: 11px;
+  color: var(--tea-color-text-disabled);
+}
+
+/* ⓘ 口径说明 */
+._mamat-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  font-size: 11px;
+  color: var(--tea-color-text-tertiary);
+  cursor: help;
+  border-radius: 50%;
+  user-select: none;
+}
+
+._mamat-info:hover,
+._mamat-info:focus {
+  color: var(--tea-color-text-brand-default);
+  outline: none;
+}
+
+._mamat-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  padding: 8px 10px;
+  background: var(--tea-color-bg-primary-default);
+  border: 1px solid var(--tea-color-border-primary-default);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--tea-color-text-secondary);
+  white-space: normal;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s;
+  z-index: 20;
+  pointer-events: none;
+}
+
+._mamat-info:hover ._mamat-tip,
+._mamat-info:focus ._mamat-tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+._mamat-scroll {
+  overflow-x: auto;
+}
+
+._mamat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  min-width: 560px;
+}
+
+._mamat-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--tea-color-text-tertiary);
+  border-bottom: 1px solid var(--tea-color-border-primary-default);
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+._mamat-th {
+  text-align: right;
+}
+
+._mamat-th-upd {
+  text-align: right;
+}
+
+._mamat-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+._mamat-sortable:hover {
+  color: var(--tea-color-text-brand-default);
+}
+
+._mamat-table td {
+  padding: 9px 10px;
+  color: var(--tea-color-text-secondary);
+  border-bottom: 1px solid var(--tea-color-border-secondary-default);
+  vertical-align: middle;
+}
+
+._mamat-row--shared {
+  background: var(--tea-color-bg-secondary-default);
+}
+
+._mamat-td-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+._mamat-td-total {
+  font-weight: 700;
+  color: var(--tea-color-text-primary);
+}
+
+._mamat-td-upd {
+  text-align: right;
+  color: var(--tea-color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 归属列 */
+._mamat-td-owner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+._mamat-avatar {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: #2563eb;
+}
+
+._mamat-avatar--shared {
+  background: #94a3b8;
+}
+
+._mamat-owner-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+._mamat-owner-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--tea-color-text-primary);
+}
+
+._mamat-owner-sub {
+  font-size: 11px;
+  color: var(--tea-color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 数字 + 迷你条 */
+._mamat-num {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+._mamat-num--mem {
+  color: #14b8a6;
+}
+
+._mamat-num--skill {
+  color: #8b5cf6;
+}
+
+._mamat-num--wiki {
+  color: #4c8bf5;
+}
+
+._mamat-mini {
+  display: block;
+  width: 64px;
+  height: 4px;
+  margin: 4px 0 0 auto;
+  background: var(--tea-color-bg-secondary-default);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+._mamat-mini-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
+
+._mamat-mini--mem {
+  background: #14b8a6;
+}
+
+._mamat-wiki-sub {
+  font-size: 11px;
+  color: var(--tea-color-text-tertiary);
+}
+
+/* 合计行 */
+._mamat-foot td {
+  background: var(--tea-color-bg-secondary-default);
+  font-weight: 600;
+  border-bottom: none;
+  border-top: 1.5px solid var(--tea-color-border-primary-default);
+}
+
+._mamat-foot-label {
+  font-size: 12.5px;
+  color: var(--tea-color-text-primary);
+}
+
+._mamat-empty {
+  padding: 40px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--tea-color-text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ._mamat-mini-fill {
+    transition: none;
+  }
+}

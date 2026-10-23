@@ -47,7 +47,9 @@ done
 
 # --force：清理没被 PID 文件记录、但仍占着端口的残留进程
 if [[ $FORCE -eq 1 ]]; then
-  for port in 8420 8424 8125 8096; do
+  # 与 start.sh 保持一致：端口可用同名环境变量覆盖
+  for port in "${CORE_PORT:-8420}" "${KNOWLEDGE_PORT:-8424}" \
+              "${PANEL_PORT:-8125}" "${PROXY_PORT:-8096}"; do
     leftover="$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null || true)"
     if [[ -n "$leftover" ]]; then
       warn "端口 $port 仍有残留进程，强杀: $leftover"

@@ -14,7 +14,7 @@ import { SessionInsightsPage } from '@/pages/SessionInsightsPage';
 import { MyMemoryPage } from '@/pages/MyMemoryPage';
 import { LayeredRefinePage } from '@/pages/LayeredRefinePage';
 import { MySkillsPage } from '@/pages/MySkillsPage';
-import { LocalSkillsPage } from '@/pages/LocalSkillsPage';
+import { AiCollabPage } from '@/pages/AiCollabPage';
 import { MembersPage } from '@/pages/MembersPage';
 import { AgentsPage } from '@/pages/AgentsPage';
 import { ApiKeysPage } from '@/pages/ApiKeysPage';
@@ -37,7 +37,7 @@ export const routes: RouteObject[] = [
       { path: 'my-memory', element: <MyMemoryPage /> },
       { path: 'layered-refine', element: <LayeredRefinePage /> },
       { path: 'personal/skills', element: <MySkillsPage /> },
-      { path: 'personal/local-skills', element: <LocalSkillsPage /> },
+      { path: 'ai-collab', element: <AiCollabPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
       { path: 'team/members', element: <MembersPage /> },
       { path: 'team/agents', element: <AgentsPage /> },

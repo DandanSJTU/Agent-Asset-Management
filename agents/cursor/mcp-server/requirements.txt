@@ -1,0 +1,5 @@
+# 注意：mcp 2.x 把 FastMCP 改名为 MCPServer（from mcp.server.mcpserver import MCPServer），
+# 本 server 用的是 1.x 的 FastMCP API，必须在 1.x 运行，故锁死 <2。
+# 全新环境执行 `pip install -r requirements.txt` 即可，不要写成 `mcp>=1.0`（会拉到 2.x 直接挂）。
+mcp>=1.9,<2
+httpx>=0.24

@@ -1,0 +1,127 @@
+{
+  "role": "product",
+  "displayName": "产品（Product-Engineer Hybrid）",
+  "agentId": "agt-mock-pm",
+  "userId": "usr-mock-pm",
+  "teamId": "team-mockrec01",
+  "sessions": [
+    {
+      "sessionId": "mock://team-recsys/product/2026-09-08-sprint12-spec",
+      "title": "Sprint12 · 站外热点分发 Spec 与验收口径",
+      "startedAt": "2026-09-08T02:10:00.000Z",
+      "endedAt": "2026-09-08T04:35:00.000Z",
+      "recordCount": 86,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 85,
+          "scene_name": "团队在围绕站外趋势热点分发定义 Spec 与验收口径",
+          "content": "携程首页信息流覆盖 T 站（Trip）与 C 站（Ctrip）双平台，行前 / 行中两套场景并行；精排当前基线为 base_v9_4（elf-plugin-feeds，zeus 调度）。团队约定任何策略需求必须同时说明对 T 站 / C 站、行前 / 行中各自的影响，不允许只报汇总口径。"
+        },
+        {
+          "type": "work_artifact",
+          "priority": 80,
+          "scene_name": "团队在围绕站外趋势热点分发定义 Spec 与验收口径",
+          "content": "站外趋势热点分发方案 V1 已定稿为 1-2 Page Spec：用 LLM 检索站外热点信号（竞品 / 旅游局 / 公众号 / 全网热门），经热度分公式计算后把已热笔记内容注入首页信息流候选池；Spec 四段结构为「背景-方案-指标-验收」，替代原来的 15-30 页 PRD。",
+          "metadata": { "artifact_type": "spec", "artifact_ref": "spec/hotspot-distribution-v1" }
+        },
+        {
+          "type": "work_task",
+          "priority": 78,
+          "scene_name": "团队在围绕站外趋势热点分发定义 Spec 与验收口径",
+          "content": "站外趋势热点分发 V1 待排期进 AB：owner 为产品（林夏），deadline 2026-10-31，当前状态为「待算法出基线对照方案」。验收指标定为 pv_ctr、uv_ctr、一个月新鲜度与 top100 集中度四项，缺一不推全。",
+          "metadata": { "owner": "usr-mock-pm", "deadline": "2026-10-31", "status": "pending" }
+        },
+        {
+          "type": "work_method",
+          "priority": 90,
+          "scene_name": "团队在围绕站外趋势热点分发定义 Spec 与验收口径",
+          "content": "需求交付方式：用 1-2 Page Spec 替代长 PRD（背景 / 方案 / 指标 / 验收四段，控制在 2 页内），用可点击原型替代需求评审会。团队共识是协调时间要从 45% 压到 12%，杠杆在「减少文档与会议」而不是减少管理动作。",
+          "metadata": { "scope": "team", "method_type": "sop" }
+        }
+      ]
+    },
+    {
+      "sessionId": "mock://team-recsys/product/2026-09-22-metric-caliber",
+      "title": "指标口径对齐 · pv_ctr / uv_ctr 与跨体系对比陷阱",
+      "startedAt": "2026-09-22T06:00:00.000Z",
+      "endedAt": "2026-09-22T08:20:00.000Z",
+      "recordCount": 74,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 92,
+          "scene_name": "团队在对齐信息流指标口径与跨体系对比规则",
+          "content": "信息流点击率必须区分两种口径：pv_ctr = 点击 pv / 曝光 pv（每次曝光的点击效率），uv_ctr = 点击 uv / 曝光 uv（多大比例的曝光用户产生点击），两者分母不同、不可混用；「点击 uv / 点击 pv」是原子计数，「uv 点击率 / pv 点击率」是比率，也不是同一层级。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 88,
+          "scene_name": "团队在对齐信息流指标口径与跨体系对比规则",
+          "content": "大报表（监控报表）与 AB 指标两套体系同名不同算：大报表用 vid 去重并关联首页 pageview（关联不上的舍弃），AB 指标用 cid 去重且直接取曝光点击数据。两套体系的渗透率 / ctr 绝对值天然有 gap，只能各自看趋势，不可跨体系比数值。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 84,
+          "scene_name": "团队在对齐信息流指标口径与跨体系对比规则",
+          "content": "行前渗透率（OKR 直接指标）取数口径：分子 expo_uv = count(distinct case when expo_label=1 then clientcode end)，底表 dw_mobdb.edw_trace_home_strmg_expo，需过滤 blocktitle in ('当季热门','当地热门')、lower(biztype) not in ('sdk','2nd')、index 非空、abnormallabel <> 'abnormal'；分母 home_uv 底表 sharein_ctrip.edw_ubt_pageview_day。"
+        },
+        {
+          "type": "work_method",
+          "priority": 86,
+          "scene_name": "团队在对齐信息流指标口径与跨体系对比规则",
+          "content": "任何实验结论或周报引用指标时必须三件套齐备：① 标明 pv 口径还是 uv 口径；② 标明来自大报表还是 AB 指标；③ 标明底表与实验号。缺任一项的结论不允许进推全决策。",
+          "metadata": { "scope": "team", "method_type": "constraint" }
+        }
+      ]
+    },
+    {
+      "sessionId": "mock://team-recsys/product/2026-10-10-content-governance",
+      "title": "内容治理 · 曝光衰减打压与视频分发策略权衡",
+      "startedAt": "2026-10-10T01:30:00.000Z",
+      "endedAt": "2026-10-10T04:10:00.000Z",
+      "recordCount": 112,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 87,
+          "scene_name": "团队在讨论首页信息流内容治理与曝光衰减打压",
+          "content": "视频与图文消费对比（2026-09 数据）：点后平均时长视频 38.2s vs 图文 31.5s（+21%），但 PV 点击率视频低于图文约 3%，曝光时长 3.8s vs 4.0s 略低。结论是视频的价值在时长与互动，不在点击，评估视频策略不能只看 ctr。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 83,
+          "scene_name": "团队在讨论首页信息流内容治理与曝光衰减打压",
+          "content": "视频内容分发硬门槛：五维打分（5 大维度 + 16 子维度）评级达到 1+ 才可进入分发，level 1 = 一般 / 2 = 优质 / 3 = 精选；未达标内容不进入排序，而不是排序后过滤。"
+        },
+        {
+          "type": "work_task",
+          "priority": 80,
+          "scene_name": "团队在讨论首页信息流内容治理与曝光衰减打压",
+          "content": "曝光衰减打压方案仍在讨论中，未拍板：按 7d / 30d / 180d / 全生命周期多窗口统计累计曝光，超阈内容按指数降权乘子打压，用于治理低质猎奇内容与营销号高 CTR 问题；各窗口阈值需按实际曝光分布标定，embedding 相似度过滤与曝光衰减的叠加顺序待 A/B 验证。",
+          "metadata": { "owner": "usr-mock-pm", "deadline": "2026-11-15", "status": "discussing" }
+        },
+        {
+          "type": "work_fact",
+          "priority": 90,
+          "scene_name": "团队在讨论首页信息流内容治理与曝光衰减打压",
+          "content": "2026-03-31 ~ 2026-05-29「CT 首页信息流不出 UGC」实验（实验号 220901_BBZ_xiahu / 240531_BBZ_zhgz，C 站 2% 流量，60 天）被否决：APP 首页 UV 显著 -0.25%、复访率显著负向，大盘酒店订单与 GMV 持平。团队据此确立决策原则——交易指标平但留存负向即否决，留存下降本身就是重大问题。"
+        },
+        {
+          "type": "work_method",
+          "priority": 85,
+          "scene_name": "团队在讨论首页信息流内容治理与曝光衰减打压",
+          "content": "AB 推全判断三条：① 核心点击指标正向；② 留存 / 时长 / 多样性指标不显著负向；③ 结论必须可归因到具体环节，不接受「大盘涨了但说不清为什么」的黑盒收益。任一不满足则回到调优，不推全。",
+          "metadata": { "scope": "team", "method_type": "principle" }
+        },
+        {
+          "type": "work_artifact",
+          "priority": 70,
+          "scene_name": "团队在讨论首页信息流内容治理与曝光衰减打压",
+          "content": "首页信息流策略地图已沉淀为团队共享 Wiki 首页：漏斗五环节（召回 / 粗排 / 精排 / 重排 / 退场）+ 各环节实体页 + 实验线台账，新成员按图索骥即可定位到具体通道与实验。",
+          "metadata": { "artifact_type": "wiki", "artifact_ref": "wiki-mock-shared/首页信息流策略地图" }
+        }
+      ]
+    }
+  ]
+}

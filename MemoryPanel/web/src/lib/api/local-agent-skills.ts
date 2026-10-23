@@ -67,3 +67,42 @@ export async function listLocalAgentSkills(signal?: AbortSignal): Promise<LocalA
 }
 
 export type { ApiError };
+
+// ========================= 读取单个本地 skill 内容（「从本地导入」落库用） =========================
+
+export interface LocalAgentSkillResource {
+  /** 相对 skill 目录的资源路径（如 scripts/run.sh、references/x.md） */
+  path: string;
+  content: string;
+  encoding: 'utf-8' | 'base64';
+  mime_type: string;
+  is_executable: boolean;
+}
+
+export interface LocalAgentSkillContent {
+  /** SKILL.md 全文 */
+  content: string;
+  resources: LocalAgentSkillResource[];
+}
+
+/** 读取本机某个本地 skill 物理目录的完整内容（SKILL.md + 资源文件），用于「从本地导入」落库。 */
+export async function getLocalAgentSkillContent(
+  path: string,
+  signal?: AbortSignal,
+): Promise<LocalAgentSkillContent> {
+  const session = getPanelSession();
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (session) {
+    headers['X-Tdai-Service-Id'] = session.instanceId;
+    if (session.userKey) headers['X-Tdai-User-Key'] = session.userKey;
+  }
+  const qs = '?path=' + encodeURIComponent(path);
+  const envelope = await request<MetaEnvelope<LocalAgentSkillContent>>(
+    'GET',
+    `/api/v1/local-agent-skills/content${qs}`,
+    undefined,
+    headers,
+    signal,
+  );
+  return unwrapEnvelope(envelope, 'empty local-agent-skills content');
+}

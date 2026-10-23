@@ -415,7 +415,7 @@ export default function LoginGate({
       {/* 居中内容区 */}
       <main className="_tdai-login-main">
         <div className="_tdai-login-card">
-          <img src="/logo.png" alt="Agent 资产管理" className="_tdai-login-logo" />
+          <img src="/logo.png" alt="Agent记忆管理系统" className="_tdai-login-logo" />
 
           <h1 className="_tdai-login-title">{t('login.welcome')}</h1>
           <p className="_tdai-login-subtitle">{t('login.tagline')}</p>

@@ -30,7 +30,7 @@ export type PageId =
   | 'personal_memory'
   | 'layered_refine'
   | 'personal_skills'
-  | 'personal_local_skills';
+  | 'ai_collab';
 
 /** 页面元数据 */
 export interface PageMeta {
@@ -73,13 +73,13 @@ export function usePageMeta(): Record<PageId, PageMeta> {
     layered_refine:    { id: 'layered_refine',    label: t('menu.layered_refine'),    desc: t('menu.desc.layered_refine'),    group: t('menu.group.personal'), order: 2, hidden: true },
     // 「我的技能」：个人私有技能库（team_id='personal' + 虚拟 agent），与团队 Skills 页平行但彼此隔离。
     personal_skills:   { id: 'personal_skills',   label: t('menu.personal_skills'),   desc: t('menu.desc.personal_skills'),   group: t('menu.group.personal'), order: 3 },
-    // 「本地 Agent 技能」：只读扫描本机各 AI Agent 客户端（workbuddy/hermes/...）的本地 skill 目录，
-    // 与「我的技能」个人库（落 MemoryCore）互补——本页只浏览磁盘，不落库。
-    personal_local_skills: { id: 'personal_local_skills', label: t('menu.personal_local_skills'), desc: t('menu.desc.personal_local_skills'), group: t('menu.group.personal'), order: 4 },
+    // 「AI 协作」（ai_collab）：按需求移除前端入口——侧边栏与标签栏均不展示（hidden: true），
+    // 路由 /ai-collab 与页面代码保留可达，需要恢复时删掉 hidden 即可（与 workbench_board / code 同款处理）。
+    ai_collab:         { id: 'ai_collab',         label: t('menu.ai_collab'),         desc: t('menu.desc.ai_collab'),         group: t('menu.group.assets'), order: 5, hidden: true },
   };
 }
 
-/** 分组排序顺序：工作台 → 个人空间 → 资产管理 → 组织与权限（数据分析默认隐藏，置于末尾） */
+/** 分组排序顺序：工作台 → 个人空间 → Agent记忆 → 组织与权限（数据分析默认隐藏，置于末尾） */
 export const GROUP_ORDER_KEYS = ['workbench', 'personal', 'assets', 'organization', 'observability'] as const;
 
 /** 每个页面在侧边栏菜单中的图标（Tea 官方图标，size 16） */
@@ -100,14 +100,14 @@ export const ITEM_ICON: Record<PageId, JSX.Element> = {
   code: <CodeIcon size={16} />,
   skills: <ToolsIcon size={16} />,
   personal_skills: <ToolsIcon size={16} />,
-  personal_local_skills: (
+  chat_memory: <ChatIcon size={16} />,
+  ai_collab: (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 7l9-4 9 4-9 4-9-4z" />
-      <path d="M3 12l9 4 9-4" />
-      <path d="M3 17l9 4 9-4" />
+      <path d="M12 3l1.6 3.4L17 8l-3.4 1.6L12 13l-1.6-3.4L7 8l3.4-1.6L12 3z" />
+      <path d="M5 14l.9 1.9L8 17l-2.1 1.1L5 20l-.9-1.9L2 17l2.1-1.1L5 14z" />
+      <path d="M18 14l.9 1.9L21 17l-2.1 1.1L18 20l-.9-1.9L15 17l2.1-1.1L18 14z" />
     </svg>
   ),
-  chat_memory: <ChatIcon size={16} />,
   personal_insights: (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="9" />

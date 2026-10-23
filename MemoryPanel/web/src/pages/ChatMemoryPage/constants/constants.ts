@@ -15,6 +15,7 @@ export function useScopeTabLabels(): Record<ScopeTab, string> {
   const { t } = useTranslation();
   return {
     team: t('memory.scope.team'),
+    mine: t('memory.scope.mine'),
     fixed: t('memory.scope.fixed'),
   };
 }
@@ -26,6 +27,7 @@ export const SCOPE_TAB_LABELS: Record<ScopeTab, string> = new Proxy({} as Record
   get(_target, prop: string) {
     const map: Record<string, string> = {
       team: 'memory.scope.team',
+      mine: 'memory.scope.mine',
       fixed: 'memory.scope.fixed',
     };
     const key = map[prop];

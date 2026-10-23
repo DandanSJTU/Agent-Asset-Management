@@ -87,6 +87,24 @@ export function repoOf(sessionId: string): string {
   return k > 0 ? sessionId.slice(0, k) : sessionId || '—';
 }
 
+/**
+ * 「位置」标签（列表列 / 看板卡片 / repo facet 用）。
+ *
+ * workbuddy 的 sessionId 天然是 `<目录slug>/<uuid>`，取前缀即可；
+ * codex / cursor 这类 sessionId 是纯 UUID（无目录层级），前缀会退化成一串 UUID，
+ * 此时回退到 facts 里的 git.cwd 末两级，展示真实工作目录。
+ *
+ * 注意：git.cwd 只用于展示，不进入搜索索引（沿用「私有路径不建索引」的隐私口径）。
+ */
+export function locationOf(s: Pick<SessionSummary, 'sessionId' | 'git'>): string {
+  const base = repoOf(s.sessionId);
+  if (/[/\\]/.test(base)) return base;
+  const cwd = s.git?.cwd;
+  if (!cwd) return base;
+  const parts = cwd.split(/[/\\]/).filter(Boolean);
+  return parts.slice(-2).join('/') || base;
+}
+
 const fieldCache = new WeakMap<SessionSummary, SearchField[]>();
 
 /**

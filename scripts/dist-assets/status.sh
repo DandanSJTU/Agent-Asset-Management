@@ -9,7 +9,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PIDS="$ROOT/runtime/pids"
 LOGS="$ROOT/runtime/logs"
-CURL="curl --noproxy 127.0.0.1,localhost"
+CURL="curl --noproxy 127.0.0.1,localhost --connect-timeout 3 --max-time 10"
 
 # 与 start.sh 保持一致：端口可用同名环境变量覆盖
 CORE_PORT="${CORE_PORT:-8420}"

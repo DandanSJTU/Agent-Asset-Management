@@ -1865,6 +1865,8 @@ export class TdaiGateway {
       // 3) 源会话状态：计算增量起点（文件指纹 + 游标）；forceFull 忽略游标从头再提炼
       const sourceKey = computeSourceKey(vendor, sessionId);
       const store = new PersonalSourceSessionStore(this.config.data.baseDir);
+      // 身份必须先落地：否则首次提炼的会话只剩 sourceKey，UI 侧退化成无 session_id 的幽灵行
+      store.ensureIdentity(sourceKey, vendor, sessionId);
       const existing = store.get(sourceKey);
       const need = needsIngest(existing, messages.length);
       const startIndex = body.forceFull ? 0 : need.startIndex;

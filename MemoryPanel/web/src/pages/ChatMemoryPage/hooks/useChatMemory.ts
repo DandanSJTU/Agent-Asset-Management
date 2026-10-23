@@ -7,15 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { useAgents, useTeams } from '@/services';
 import { readAuth } from '@/components/LoginGate';
 import { tea, confirmThenRun } from '@/lib/tea-bridge';
-import type { ChatMemoryBlock, ChatMemorySearchHit } from '@/lib/teamApi';
+import { chatMemoryApi, type ChatMemoryBlock, type ChatMemorySearchHit } from '@/lib/teamApi';
 import { type MemoryBlock, type MemoryLayer, type ScopeTab } from '../constants/types';
 import { useScopeTabLabels } from '../constants/constants';
-import {
-  getChatMemoryApi,
-  isDemoMode,
-  persistDemoMode,
-  type ChatMemoryApiLike,
-} from '../mock/mockApi';
 import {
   buildInitialLayerCounts,
   defaultTimeRange,
@@ -64,11 +58,8 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
   // 后端探测到筛选范围过大时为 true，BlockDetail 显示提示而非空态
   const [rangeTooLarge, setRangeTooLarge] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [showAllocate, setShowAllocate] = useState(false);
-  // 演示模式：用 mock 数据驱动整个 tab（URL `?demo=1` 或 localStorage 标记）。
-  // api 在 demo / 真实之间切换，hook 内所有 chatMemoryApi 调用统一走 api。
-  const [demoMode, setDemoModeState] = useState<boolean>(() => isDemoMode());
-  const api: ChatMemoryApiLike = getChatMemoryApi(demoMode);
+  // 统一走真实 chatMemoryApi；所有调用通过 api 转发，便于后续替换 / 拦截。
+  const api = chatMemoryApi;
   // 默认展示团队资产（team）。「Agent 资产」（fixed）入口已隐藏，仅保留 team 视角。
   const [scopeTab, setScopeTab] = useState<ScopeTab>('team');
   const [agentFilter, setAgentFilter] = useState<string>('');
@@ -98,14 +89,14 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
   const l0AutoExpandCountRef = useRef(0);
 
   const fetchBlocks = useCallback(async () => {
-    // 演示模式下不需要真实 team / agent 上下文，直接用 mock 数据驱动。
-    if (!demoMode && !activeTeamId) {
+    // 无 team 上下文时不发请求，直接清空。
+    if (!activeTeamId) {
       setBlocks([]);
       setBlocksLoading(false);
       return;
     }
-    // fixed tab 没选 agent 时不发请求，但要确保 loading 关闭（演示模式下默认 team tab，不走此分支）
-    if (!demoMode && scopeTab === 'fixed' && !agentFilter) {
+    // fixed tab 没选 agent 时不发请求，但要确保 loading 关闭
+    if (scopeTab === 'fixed' && !agentFilter) {
       setBlocks([]);
       setBlocksLoading(false);
       return;
@@ -123,10 +114,17 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     }
     try {
       let res: { items: ChatMemoryBlock[]; total?: number };
-      if (scopeTab === 'fixed' && !demoMode) {
+      if (scopeTab === 'fixed') {
         res = await api.agentFixed(agentFilter);
+      } else if (scopeTab === 'mine') {
+        // 「我的」= 团队空间内 **owner=我** 的记忆（含已共享的 team + 仅我可见的 private）。
+        // /chat-memory/mine 本身就是 owner=我 的全量，直接透传，不再按 scope 过滤
+        // （早期版本只留 private，导致绝大多数账号这一档是空的）。
+        // 卡片上的「共享中 / 仅我可见」切换器即状态标识。
+        const mineRes = await api.mine(activeTeamId);
+        res = { items: mineRes.items, total: mineRes.total };
       } else {
-        res = await api.teamAssets(activeTeamId ?? 'demo');
+        res = await api.teamAssets(activeTeamId);
       }
       if (seq !== fetchSeqRef.current) return; // 已被后续请求取代
       const mapped: MemoryBlock[] = res.items.map((b) => ({
@@ -157,17 +155,7 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     // 注：不再在这里 setSelectedId —— 之前 fetchBlocks 的 useCallback 依赖
     // 了 selectedId，导致每次选中一个 block 都重新 fetch 整个列表（卡顿主因）。
     // 默认选中的逻辑改由下方独立 effect 处理。
-  }, [demoMode, activeTeamId, scopeTab, agentFilter, api, t]);
-
-  /** 切换演示模式：持久化到 localStorage 并重新拉取（mock / 真实）。 */
-  const setDemoMode = useCallback(
-    (value: boolean) => {
-      persistDemoMode(value);
-      setDemoModeState(value);
-      void fetchBlocks();
-    },
-    [fetchBlocks],
-  );
+  }, [activeTeamId, scopeTab, agentFilter, api, t]);
 
   // 触发 fetchBlocks：依赖原始参数 + fetchBlocks，并用 key 去重防止短时间内重复触发。
   // 之前直接 `useEffect(() => fetchBlocks(), [fetchBlocks])` 会因 fetchBlocks 引用变化
@@ -529,17 +517,6 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     return !!ownerAgentId && b.id === `chat_memory-${activeTeamId}-${ownerAgentId}`;
   }
 
-  function allocatableAgents(b: MemoryBlock) {
-    // 文档 §4.5 allocate 权限规则：
-    //   1. agent.owner = me（只能分配到自己 owner 的 agent，否则 403 NOT_YOUR_AGENT）
-    //   3. 不能把 agent 自己的 chat_memory 分配给自己
-    // 所以数据源用 ownedTeamAgents，排除该记忆块自身的 agent。
-    const ownerAgentId = selfChatMemoryAgentId(b);
-    return ownedTeamAgents
-      .filter((a) => a.agent_id !== ownerAgentId)
-      .map((a) => ({ agent_id: a.agent_id, name: a.name }));
-  }
-
   // ── 操作 ──
   async function handleDeleteBlock(id: string) {
     const block = blocks.find((b) => b.id === id);
@@ -685,15 +662,10 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     rangeTooLarge,
     showImport,
     setShowImport,
-    showAllocate,
-    setShowAllocate,
     scopeTab,
     setScopeTab,
     agentFilter,
     setAgentFilter,
-    // demo
-    demoMode,
-    setDemoMode,
     api,
     // computed
     selected,
@@ -714,7 +686,6 @@ export function useChatMemory(props: { activeTeamId?: string | null } = {}) {
     handleToggleScope,
     // helpers
     agentLabel,
-    allocatableAgents,
     isSelfChatMemory,
   };
 }

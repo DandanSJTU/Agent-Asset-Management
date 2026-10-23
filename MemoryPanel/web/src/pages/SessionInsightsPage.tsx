@@ -72,7 +72,7 @@ import {
   filterByRange,
   loadSearchHistory,
   pushSearchHistory,
-  repoOf,
+  locationOf,
   runSessionSearch,
   type Qualifier,
 } from '@/lib/session-search';
@@ -701,6 +701,11 @@ export function SessionInsightsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
+  // 选中会话的 vendor（多 vendor：workbuddy / codex…）——详情接口按 vendor+sessionId 精确定位
+  const selectedVendor = useMemo(
+    () => sessions.find((s) => s.sessionId === selectedId)?.vendor,
+    [sessions, selectedId],
+  );
 
   // ===== M4b · 个人记忆（「我的记忆」）状态联合 =====
   const navigate = useNavigate();
@@ -830,7 +835,10 @@ export function SessionInsightsPage() {
     const ac = new AbortController();
     setDetailLoading(true);
     setDetailError(null);
-    Promise.all([fetchSessionFacts(selectedId, ac.signal), fetchHandoff(selectedId, ac.signal)])
+    Promise.all([
+      fetchSessionFacts(selectedId, ac.signal, selectedVendor),
+      fetchHandoff(selectedId, ac.signal),
+    ])
       .then(([f, h]) => {
         if (ac.signal.aborted) return;
         setDetail(f);
@@ -893,7 +901,7 @@ export function SessionInsightsPage() {
     return {
       states: count((s) => s.state || '—'),
       agents: count((s) => s.vendor || '—'),
-      repos: count((s) => repoOf(s.sessionId)).slice(0, 12),
+      repos: count((s) => locationOf(s)).slice(0, 12),
     };
   }, [inRange]);
 
@@ -920,7 +928,7 @@ export function SessionInsightsPage() {
     let list = search.matched;
     if (selStates.length) list = list.filter((s) => selStates.includes(s.state || '—'));
     if (selAgents.length) list = list.filter((s) => selAgents.includes(s.vendor || '—'));
-    if (selRepos.length) list = list.filter((s) => selRepos.includes(repoOf(s.sessionId)));
+    if (selRepos.length) list = list.filter((s) => selRepos.includes(locationOf(s)));
     const sorted = [...list];
     const cmp: Record<SortKey, (a: SessionSummary, b: SessionSummary) => number> = {
       title: (a, b) =>
@@ -1106,8 +1114,8 @@ export function SessionInsightsPage() {
         </div>
       ) : (
         <>
-          {/* ===== 共享控制条 · 筛选行：facet 触发器 + ViewSwitch ===== */}
-          <div className="sim-frow">
+          {/* ===== 共享控制条 · 工具行：筛选器 + 搜索框 + 视图切换 ===== */}
+          <div className="sim-toolbar">
             <FacetMenu
               label={t('insights.facet.status')}
               options={facetOptions.states}
@@ -1126,26 +1134,6 @@ export function SessionInsightsPage() {
               selected={selRepos}
               onChange={setSelRepos}
             />
-            <Segment
-              className="sim-viewsw"
-              value={view}
-              onChange={(v) => setView(v as ViewKey)}
-              options={[
-                { value: 'table', text: t('insights.view.table') },
-                { value: 'board', text: t('insights.view.board') },
-                { value: 'insights', text: t('insights.view.insights') },
-              ]}
-            />
-          </div>
-
-          {/* ===== 共享控制条 · 搜索行：chips + SearchBox ===== */}
-          <div className="sim-searchrow">
-            {activeChips.map((c) => (
-              <span className="sim-chip" key={c.key}>
-                {c.label}
-                <span className="sim-chip-x" onClick={c.clear}>×</span>
-              </span>
-            ))}
             <SearchBox
               value={keyword}
               onChange={(v) => setKeyword(v)}
@@ -1169,7 +1157,29 @@ export function SessionInsightsPage() {
               clearLabel={t('insights.search.recentClear')}
               emptyLabel={t('insights.search.recentEmpty')}
             />
+            <Segment
+              className="sim-viewsw"
+              value={view}
+              onChange={(v) => setView(v as ViewKey)}
+              options={[
+                { value: 'table', text: t('insights.view.table') },
+                { value: 'board', text: t('insights.view.board') },
+                { value: 'insights', text: t('insights.view.insights') },
+              ]}
+            />
           </div>
+
+          {/* ===== 共享控制条 · 已选条件 chips ===== */}
+          {activeChips.length > 0 && (
+            <div className="sim-chipsrow">
+              {activeChips.map((c) => (
+                <span className="sim-chip" key={c.key}>
+                  {c.label}
+                  <span className="sim-chip-x" onClick={c.clear}>×</span>
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* ===== 共享控制条 · scope 行：Rollup + 视图专属右簇 + range ===== */}
           <div className="sim-scoperow">
@@ -1572,7 +1582,7 @@ function TableView({
           </span>
           <span className="sim-c2">
             <span className="sim-t2">
-              {repoOf(s.sessionId)} · {s.vendor}
+              {locationOf(s)} · {s.vendor}
             </span>
           </span>
           <span className="sim-c3 sim-st">
@@ -1605,7 +1615,7 @@ function dimValue(s: SessionSummary, dim: DimKey): string | null {
   if (dim === 'none') return null;
   if (dim === 'state') return s.state || '—';
   if (dim === 'agent') return s.vendor || '—';
-  return repoOf(s.sessionId);
+  return locationOf(s);
 }
 
 function BoardView({
@@ -1780,7 +1790,7 @@ function BoardCard({
         </div>
       )}
       <div className="sim-card-foot">
-        <span className="sim-mono2">{repoOf(s.sessionId)}</span>
+        <span className="sim-mono2">{locationOf(s)}</span>
         <span>{fmtRel(s.mtime, t)}</span>
       </div>
       <div className="sim-card-ready">
@@ -1835,7 +1845,7 @@ function InsightsView({
       if (s.costUsd === 0) unpriced += 1;
       agents.set(s.vendor, (agents.get(s.vendor) ?? 0) + 1);
       for (const m of s.models ?? []) models.set(m.model, (models.get(m.model) ?? 0) + 1);
-      const r = repoOf(s.sessionId);
+      const r = locationOf(s);
       repos.set(r, (repos.get(r) ?? 0) + 1);
       const d = new Date(s.mtime);
       days.set(d.getDate(), (days.get(d.getDate()) ?? 0) + 1);
@@ -2776,7 +2786,7 @@ function buildHandoff(
         ? syn.nextStep
         : '—';
 
-  const repo = repoOf(summary.sessionId);
+  const repo = locationOf(summary);
   const branch = summary.git?.branch ?? handoff?.baseBranch ?? '—';
   const runtime = summary.models?.[0]?.model ?? summary.vendor ?? '—';
   const environment = [

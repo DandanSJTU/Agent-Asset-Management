@@ -13,6 +13,8 @@ export function AgentsPage() {
       instanceId={auth.instance_id}
       isAdmin={role === 'admin'}
       section="agents"
+      // 资产统计（mem0 风格 Wiki / Skill / 对话记忆指标卡 + 趋势 + 构成表）
+      showAssetStats
       // Agent 模块（默认 Agent 模板 + Agents 卡片网格）暂隐藏，
       // 后续将在本页增加其他资产管理模块；恢复显示删掉这行即可。
       showAgentModules={false}

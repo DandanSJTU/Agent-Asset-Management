@@ -52,6 +52,12 @@ export interface SkillSummary {
   created_at_ms: number;
   updated_at_ms: number;
   metadata?: Record<string, unknown>;
+  /**
+   * 服务端存储落盘位置（相对路径，形如 `skills/skl-xxxx/v3`）。
+   * list 与 get 均输出；老版本后端 / asset 派生来源（团队资产 tab）可能缺失，
+   * UI 按可选字段渲染。
+   */
+  storage_dir?: string;
 }
 
 /** get 接口返回，包含完整内容 */

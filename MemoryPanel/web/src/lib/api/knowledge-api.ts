@@ -103,6 +103,11 @@ export interface WikiDetail {
   last_sync_at: string | null;
   created_at: string;
   updated_at: string;
+  /**
+   * 资产可见性（meta 层）。KS 的 wiki/get 不返回该字段，仅在「我的」档由前端
+   * 用 asset/list-accessible 的 meta 补齐，用于渲染「共享中 / 仅我可见」状态。
+   */
+  visibility?: 'team' | 'private';
 }
 
 export interface CodeGraphDetail {

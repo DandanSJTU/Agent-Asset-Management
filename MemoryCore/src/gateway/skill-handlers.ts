@@ -580,7 +580,17 @@ export async function handleList(body: unknown, _auth: V2AuthContext, requestId:
     // 普通业务调用方 **不应** 显式请求 archived——它对读/写 API 已经不可见。
     const r = await pre.core.list(pre.data);
     obsLogger.info("skill.handleList.done", { req_id: requestId, code: 0, dur_ms: Date.now() - t0, items: r.items.length, total: r.total });
-    return successEnvelope({ items: r.items.map(toSummary), total: r.total }, requestId);
+    // 列表体额外带上 storage_dir（此前只有 detail 视图输出，见 handleGet）。
+    // 动机：技能列表要展示「本地位置」列，而该值取自 Skill 行本身、
+    // 无额外查询开销；前端若逐条调 get 补齐会造成 N+1。
+    // 空值仍不输出该键，保持旧响应体形状兼容（老前端按可选字段读取）。
+    return successEnvelope({
+      items: r.items.map((s) => ({
+        ...toSummary(s),
+        ...(s.storage_dir ? { storage_dir: s.storage_dir } : {}),
+      })),
+      total: r.total,
+    }, requestId);
   } catch (e) { obsLogger.error("skill.handleList.done", { req_id: requestId, dur_ms: Date.now() - t0 }, e instanceof Error ? e : undefined); return mapCoreError(e, requestId); }
 }
 

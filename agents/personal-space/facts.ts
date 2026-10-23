@@ -14,7 +14,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { discoverSessionMeta, readOneSession, type ExtractedSession } from './session-facts.ts';
+import { ENABLED_VENDORS, discoverSessionMeta, readOneSession, type ExtractedSession } from './session-facts.ts';
 import { stripHarnessWrappers } from '../../MemoryProxy/src/common/session-harness.ts';
 
 // 引擎单一入口：scanOne 供面板 /personal-space/facts 时间线按需单文件读（M1 DoD②）
@@ -261,16 +261,57 @@ function countLines(s: unknown): number {
   return s.split('\n').length;
 }
 
+/**
+ * 解析 apply_patch 风格补丁文本（Codex 的 freeform 工具）：
+ *   *** Begin Patch
+ *   *** Add File: a/b.py        ← isNew
+ *   *** Update File: a/c.md
+ *   @@ ...
+ *   +新增行 / -删除行
+ *   *** End Patch
+ * 多文件补丁：file 取首个文件、增删行按全补丁累计（单条记录只落一个 file 聚合键，
+ * 与 extractEdit 的单文件返回契约一致；逐文件明细待后续按 files 拆分）。
+ */
+function parseApplyPatch(text: string): { file: string | null; added: number; removed: number; isNew: boolean } | null {
+  if (!text || !/\*\*\* (Begin Patch|Add File|Update File|Delete File):/.test(text)) return null;
+  let file: string | null = null;
+  let added = 0;
+  let removed = 0;
+  let isNew = false;
+  for (const line of text.split('\n')) {
+    const m = line.match(/^\*\*\* (Add File|Update File|Delete File):\s*(.+)$/);
+    if (m) {
+      if (!file) file = m[2].trim();
+      if (m[1] === 'Add File') isNew = true;
+      continue;
+    }
+    if (line.startsWith('***') || line.startsWith('@@')) continue;
+    if (line.startsWith('+')) added++;
+    else if (line.startsWith('-')) removed++;
+  }
+  return { file, added, removed, isNew };
+}
+
 function extractEdit(rec: Record<string, unknown>): { file: string | null; added: number; removed: number; isNew: boolean } | null {
   if (rec.type !== 'function_call') return null;
   const name = String(rec.name ?? '').toLowerCase();
-  if (!/edit|write|replace|multiedit|update|create|notebook/i.test(name)) return null;
+  if (!/edit|write|replace|multiedit|update|create|notebook|patch/i.test(name)) return null;
   let p = rec.parameters ?? rec.args ?? rec.input ?? rec.arguments;
   if (typeof p === 'string') {
-    try { p = JSON.parse(p); } catch { return null; }
+    const raw = p.trim();
+    if (raw.startsWith('{')) {
+      try { p = JSON.parse(raw); } catch { p = { patch: raw }; }
+    } else {
+      // freeform 工具（codex apply_patch）：arguments 就是补丁正文本身
+      p = { patch: raw };
+    }
   }
   if (!p || typeof p !== 'object') return null;
   const pp = p as Record<string, unknown>;
+  // apply_patch 分支：优先按补丁正文解析（file/增删行/isNew 都从补丁里读）
+  const patchText = typeof pp.patch === 'string' ? pp.patch : typeof pp.input === 'string' ? pp.input : '';
+  const fromPatch = parseApplyPatch(patchText);
+  if (fromPatch) return fromPatch;
   const file = (pp.file_path ?? pp.path ?? pp.filename ?? null) as string | null;
   const oldS = (pp.old_string ?? pp.oldString ?? '') as string;
   const newS = (pp.new_string ?? pp.newString ?? pp.content ?? '') as string;
@@ -677,6 +718,10 @@ export function buildFacts(session: ExtractedSession, raw: { records: Record<str
   // v7：续会话就绪度 / 简报派生累加器
   let lastInputTokens = 0; // 末次请求 inputTokens（上下文占用）
   let lastUsageModel: string | null = null; // 末次 usage 对应的模型（用于取窗口）
+  // 供应商直给口径（codex：token_count 自带 last_token_usage + model_context_window）：
+  // 有就直接用，胜过本地窗口表 / 逐轮 input 回退。
+  let directContextTokens: number | null = null;
+  let directContextWindow: number | null = null;
   let firstRealUserText = ''; // GOAL floor：跳过压缩摘要机器文本的首条真实用户提问
   let lastRecapText = ''; // OUTCOME：最后一条非工具调用的终版回复
   let lastEditTs: number | null = null; // lastEditAt 回退值：末条 Edit/Write 记录时间戳
@@ -753,6 +798,10 @@ export function buildFacts(session: ExtractedSession, raw: { records: Record<str
         modelMap.set(mk, prev);
       }
     }
+    // 供应商直给的上下文口径（codex 的 token_count：last_token_usage.input_tokens +
+    // info.model_context_window）。recs 已按 ts 升序，覆盖写即「末次值」。
+    if (typeof rec.contextTokens === 'number' && rec.contextTokens > 0) directContextTokens = rec.contextTokens;
+    if (typeof rec.contextWindow === 'number' && rec.contextWindow > 0) directContextWindow = rec.contextWindow;
     // FileEdits（保留原 edits 汇总，并聚合到逐文件 filesChanged）
     const ed = extractEdit(rec);
     if (ed) {
@@ -853,8 +902,8 @@ export function buildFacts(session: ExtractedSession, raw: { records: Record<str
   };
 
   // v7 · 续会话就绪度派生
-  const contextTokens = lastInputTokens || null;
-  const contextWindow = resolveContextWindow(lastUsageModel);
+  const contextTokens = directContextTokens ?? (lastInputTokens || null);
+  const contextWindow = directContextWindow ?? resolveContextWindow(lastUsageModel);
   // lastEditAt：优先编辑文件 stat 最大 mtime；回退末条 Edit/Write 时间戳
   let lastEditAt: number | null = null;
   for (const p of editedFilePaths) {
@@ -943,7 +992,7 @@ interface FactsCache {
  *      readiness 语义与阈值集中到 buildReadiness（引擎侧计算 tone，前端只渲染颜色）。
  * v8 (2026-10-14): 新增 S6 TIMELINE digest 条目（digestEntries: DigestEntry[]），schema 变更，升版本失效旧缓存。
  */
-const FACTS_CACHE_VERSION = 8;
+const FACTS_CACHE_VERSION = 10; // v10：codex 接入 token/成本/上下文窗口/cwd（旧缓存里这些字段全空，须失效）
 
 function loadCache(): FactsCache {
   try {
@@ -982,8 +1031,16 @@ export function computeAllSessions(useCache = true): ComputeResult {
   const t0 = Date.now();
   _gitSpawnsThisRun = 0;
 
-  // ① stat-only 发现：walk + stat，不读任何文件内容
-  const metas = discoverSessionMeta('workbuddy');
+  // ① stat-only 发现：逐 vendor walk + stat，不读任何文件内容。
+  //    多 vendor（workbuddy 主源 + codex/ChatGPT Work）：单 vendor 失败不影响其余 vendor。
+  const metas: ReturnType<typeof discoverSessionMeta> = [];
+  for (const vendor of ENABLED_VENDORS) {
+    try {
+      metas.push(...discoverSessionMeta(vendor));
+    } catch (e) {
+      console.warn(`[warn] 发现 ${vendor} 会话失败：${(e as Error).message}`);
+    }
+  }
   const topLevelKeys = new Set(metas.filter((m) => m.kind === 'top-level').map((m) => m.sessionId));
 
   // ② 装载缓存（facts 条目 + git TTL 缓存）；git TTL 缓存播种进 GIT_CACHE，
@@ -998,7 +1055,9 @@ export function computeAllSessions(useCache = true): ComputeResult {
   let rebuilt = 0;
 
   for (const m of metas) {
-    const prev = cache.entries[m.sessionId];
+    // 缓存键带 vendor 命名空间：codex/workbuddy 的 sessionId 可能同为 UUID 形态，裸 sessionId 会串味
+    const key = `${m.vendor}::${m.sessionId}`;
+    const prev = cache.entries[key];
     if (useCache && prev && prev.mtime === m.mtime && prev.size === m.size) {
       // 命中：facts 直接复用，零读盘。git 超 TTL 才刷新（仅顶层带 git 的会话）
       const f = prev.facts;
@@ -1011,7 +1070,7 @@ export function computeAllSessions(useCache = true): ComputeResult {
         }
       }
       facts.push(f);
-      cacheNext[m.sessionId] = prev;
+      cacheNext[key] = prev;
       cached++;
       continue;
     }
@@ -1019,7 +1078,7 @@ export function computeAllSessions(useCache = true): ComputeResult {
     const sc = readOneSession(m, topLevelKeys);
     const nf = buildFacts(sc.session, sc.raw);
     facts.push(nf);
-    cacheNext[m.sessionId] = { mtime: m.mtime, size: m.size, facts: nf };
+    cacheNext[key] = { mtime: m.mtime, size: m.size, facts: nf };
     rebuilt++;
   }
 

@@ -227,7 +227,19 @@ chmod +x "$ROOT/start.sh" "$ROOT/stop.sh" "$ROOT/status.sh" 2>/dev/null || true
 if [[ $SKIP_START -eq 1 ]]; then
   info "已指定 --skip-start，跳过启动。需要时执行：./start.sh"
 else
-  "$ROOT/start.sh" || die "启动失败，查看日志: $RUNTIME/logs/"
+  # 带看门狗启动：start.sh 正常 1~3 分钟跑完；若因环境异常挂起，最多等 6 分钟
+  # 后中断它继续往下走（各服务是 nohup 拉起的，不受影响，可 ./status.sh 查看），
+  # 避免安装流程被无限期卡死。
+  "$ROOT/start.sh" & START_PID=$!
+  ( sleep 360; kill -TERM "$START_PID" 2>/dev/null ) & WATCHDOG_PID=$!
+  wait "$START_PID"; START_RC=$?
+  kill "$WATCHDOG_PID" 2>/dev/null || true
+  if [[ $START_RC -eq 143 ]]; then
+    warn "start.sh 超过 6 分钟未结束，已被看门狗中断 —— 服务可能已部分拉起。"
+    warn "  执行 ./status.sh 查看各服务状态；日志目录: $RUNTIME/logs/"
+  elif [[ $START_RC -ne 0 ]]; then
+    die "启动失败（退出码 $START_RC），查看日志: $RUNTIME/logs/"
+  fi
 fi
 
 echo ""

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>Team Memory Hub · 黑客松答辩展示</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0d12;--surface:#121722;--surface2:#182030;--surface3:#202b3d;
+  --line:#263247;--line2:#344158;
+  --text:#d7dfeb;--hi:#f6f8fc;--muted:#8793a7;--muted2:#a9b4c5;
+  --accent:#d6ad62;--accent2:#f0d7a0;--accent-d:rgba(214,173,98,.11);--accent-b:rgba(214,173,98,.34);
+  --red:var(--accent);--red2:var(--accent2);--red-d:var(--accent-d);--red-b:var(--accent-b);
+  --blue:var(--accent);--blue-d:var(--accent-d);--blue-b:var(--accent-b);
+  --gold:var(--accent);--gold-d:var(--accent-d);--gold-b:var(--accent-b);
+  --green:var(--accent);--green-d:var(--accent-d);--green-b:var(--accent-b);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:
+  radial-gradient(80% 65% at 12% 10%,rgba(214,173,98,.085),transparent 58%),
+  radial-gradient(72% 60% at 84% 12%,rgba(120,135,160,.075),transparent 56%),
+  linear-gradient(180deg,rgba(255,255,255,.025),transparent 22%),
+  url("data:image/svg+xml,%3Csvg width='64' height='64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 63.5h64M63.5 0v64' stroke='rgba(255,255,255,0.025)'/%3E%3C/svg%3E")}
+.deck{width:100vw;height:100vh;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;padding:58px 76px 68px;display:none;flex-direction:column;pointer-events:none}
+.slide.active{display:flex;pointer-events:auto}
+#prog{position:fixed;left:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--accent),rgba(214,173,98,.18));z-index:10;transition:width .22s}
+#counter{position:fixed;right:26px;bottom:17px;color:var(--muted);font-size:11px;letter-spacing:.12em;z-index:10}
+#hint{position:fixed;left:26px;bottom:17px;color:rgba(135,147,167,.46);font-size:11px;z-index:10}
+.top{position:absolute;top:32px;left:76px;right:76px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.tag{display:flex;align-items:center;gap:10px;margin-bottom:18px;color:var(--red2);font-size:11px;font-weight:850;letter-spacing:.18em;text-transform:uppercase}
+.tag::before{content:"";width:26px;height:2px;background:var(--red2);border-radius:2px}
+.tag.blue{color:var(--blue)}.tag.blue::before{background:var(--blue)}
+.tag.gold{color:var(--gold)}.tag.gold::before{background:var(--gold)}
+.tag.green{color:var(--green)}.tag.green::before{background:var(--green)}
+h1{font-size:clamp(54px,7vw,92px);line-height:1;letter-spacing:-.052em;color:var(--hi);font-weight:920}
+h2{font-size:clamp(32px,3.65vw,54px);line-height:1.08;letter-spacing:-.035em;color:var(--hi);font-weight:880;max-width:1120px}
+h3{font-size:clamp(17px,1.55vw,22px);line-height:1.28;color:var(--hi);font-weight:760}
+p,li{font-size:clamp(14px,1.25vw,18px);line-height:1.62;color:var(--text)}
+.sub{font-size:clamp(16px,1.45vw,21px);line-height:1.58;color:var(--muted2);margin-top:14px;max-width:920px}
+.by{margin-top:26px;color:var(--muted2);font-size:14px;letter-spacing:.03em}
+.content{flex:1;display:flex;flex-direction:column}.center{justify-content:center}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.split{display:grid;grid-template-columns:1.04fr .96fr;gap:30px;align-items:center;flex:1}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01)),var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px 20px}
+.red-card,.blue-card,.gold-card,.green-card{background:linear-gradient(180deg,rgba(255,255,255,.036),rgba(255,255,255,.012)),var(--surface);border-color:var(--line2)}
+.muted-card{background:rgba(169,180,197,.07);border-color:rgba(169,180,197,.22)}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:780;letter-spacing:.05em;white-space:nowrap}
+.b-red,.b-blue,.b-gold,.b-green{background:rgba(214,173,98,.13);color:var(--accent2)}.b-mu{background:rgba(169,180,197,.10);color:var(--muted2)}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt24{margin-top:24px}.mt30{margin-top:30px}
+.mu{color:var(--muted2)}.hi{color:var(--hi)}.red,.blue,.gold,.green{color:var(--accent2)}
+ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+li{display:flex;gap:10px;align-items:flex-start}
+li::before{content:"→";color:var(--accent);font-weight:900;flex-shrink:0}
+.check li::before{content:"✓";color:var(--accent)}.blue-list li::before,.gold-list li::before,.green-list li::before{color:var(--accent)}
+.quote{font-size:clamp(31px,3.7vw,55px);line-height:1.2;letter-spacing:-.04em;color:var(--hi);font-weight:890;max-width:1160px}
+.big{font-size:clamp(42px,5vw,76px);line-height:1.06;letter-spacing:-.05em;color:var(--hi);font-weight:920}
+.divider{height:1px;background:var(--line);margin:24px 0}
+.matrix{display:grid;grid-template-columns:130px 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.matrix.wide{grid-template-columns:170px 1fr}
+.matrix>div{background:var(--surface);padding:14px 16px;font-size:14px;line-height:1.42}.matrix .hd{background:var(--surface2);font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2)}.matrix .rowhd{color:var(--hi);font-weight:780}
+.matrix .hl{background:rgba(214,173,98,.10)}.matrix .hl.rowhd{color:var(--accent2)}
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.step{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 14px;min-height:132px}.step-n{font-size:12px;color:var(--red2);font-weight:850;margin-bottom:10px}.step-t{font-size:18px;color:var(--hi);font-weight:790;line-height:1.24}.step-d{font-size:12px;color:var(--muted2);line-height:1.45;margin-top:9px}
+.ladder{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.level{min-height:190px;padding:18px 16px;background:var(--surface);border:1px solid var(--line);border-radius:8px}.level .n{font-size:12px;color:var(--red2);font-weight:850;margin-bottom:12px}
+.photo{width:100%;height:340px;object-fit:cover;border-radius:8px;border:1px solid var(--line2);filter:saturate(.92) contrast(1.04)}
+.headshot{width:220px;height:220px;object-fit:cover;border-radius:8px;border:1px solid var(--line2)}
+.shot{width:100%;height:360px;object-fit:cover;object-position:top left;border-radius:8px;border:1px solid var(--line2);background:var(--surface)}
+.shot.tall{height:430px}.shot.small{height:260px}.fit{object-fit:contain;background:#eef1f5}
+.arch-map{width:100%;height:710px;object-fit:contain;border:1px solid var(--line2);border-radius:8px;background:var(--surface)}
+.dense p,.dense li{font-size:14px;line-height:1.48}.tiny{font-size:12px;line-height:1.48;color:var(--muted2)}
+.pillrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.pill{border:1px solid var(--line2);border-radius:999px;padding:6px 10px;color:var(--muted2);font-size:12px;background:rgba(255,255,255,.025)}
+.source{font-size:10px;color:var(--muted);line-height:1.45;margin-top:8px}
+.sources{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+.source-card{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:12px;line-height:1.45;color:var(--muted2)}
+.source-card a{color:var(--muted2);text-decoration:none}
+.source a,.tiny a{color:var(--accent2);text-decoration:none;border-bottom:1px solid rgba(214,173,98,.34)}
+.button-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.demo-button{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(214,173,98,.42);border-radius:8px;padding:9px 13px;background:rgba(214,173,98,.10);color:var(--accent2);font-size:13px;font-weight:780;text-decoration:none;line-height:1.2}
+.demo-button::before{content:"↗";font-weight:900;color:var(--accent2)}
+.demo-button.local::before{content:"⌘"}
+.demo-content{justify-content:center;padding-top:0}
+.demo-two{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:stretch}
+.demo-two.compact{grid-template-columns:.92fr 1.08fr}
+.demo-two.single{grid-template-columns:1fr;max-width:940px;margin:0 auto}
+.demo-card{padding:20px 22px}
+.demo-card p,.demo-card li{font-size:15px;line-height:1.55}
+.concept-panel{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:8px;padding:20px 22px}
+.concept-compare{display:grid;grid-template-columns:.82fr 1.18fr;gap:12px;margin-top:14px}
+.concept-box{border:1px solid var(--line2);border-radius:8px;padding:14px 16px;background:rgba(255,255,255,.025)}
+.concept-box.true{background:rgba(214,173,98,.08);border-color:rgba(214,173,98,.30)}
+.concept-label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:850;margin-bottom:8px}
+.concept-box strong{display:block;font-size:22px;line-height:1.22;color:var(--hi);letter-spacing:-.02em}
+.concept-box p{font-size:14px;line-height:1.45;color:var(--muted2);margin-top:8px}
+.gap-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.gap-chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:13px 12px;min-height:112px}
+.gap-chip .n{font-size:11px;color:var(--accent2);font-weight:850;letter-spacing:.08em;margin-bottom:8px}
+.gap-chip h3{font-size:17px;line-height:1.22}
+.gap-chip p{font-size:12px;line-height:1.42;color:var(--muted2);margin-top:7px}
+.demo-flow{display:grid;gap:10px}
+.demo-flow.six{grid-template-columns:repeat(6,1fr)}.demo-flow.five{grid-template-columns:repeat(5,1fr)}
+.demo-step{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:15px 13px;min-height:118px}
+.demo-step .step-n{margin-bottom:8px}.demo-step .step-t{font-size:17px}.demo-step .step-d{font-size:12px}
+.demo-insight{border-left:3px solid var(--accent);background:rgba(255,255,255,.035);border-radius:8px;padding:16px 18px;color:var(--hi);font-size:24px;line-height:1.32;font-weight:820;letter-spacing:-.02em}
+.demo-insight.blue,.demo-insight.green,.demo-insight.gold{border-color:var(--accent)}
+.demo-note{font-size:15px;line-height:1.55;color:var(--muted2);margin-top:12px}
+.source-stack{display:grid;gap:10px;margin-top:14px}
+.cover{justify-content:flex-end;padding-bottom:78px}
+.cover h1{max-width:1100px}.cover .kicker{color:var(--muted);font-size:12px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:22px}
+/* ---- 额外：价值链条 / 内嵌 SVG 容器 / 占位图 ---- */
+.chain{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin-top:8px}
+.chain .node{background:var(--surface);border:1px solid var(--line2);border-radius:999px;padding:9px 15px;font-size:14px;color:var(--hi);white-space:nowrap}
+.chain .ar{color:var(--accent);font-weight:900;font-size:17px;padding:0 1px}
+.mini-svg{width:100%;height:auto;background:var(--surface);border:1px solid var(--line2);border-radius:8px}
+.ph{display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px dashed var(--line2);
+  background:linear-gradient(135deg,rgba(214,173,98,.06),rgba(120,135,160,.04));color:var(--muted);font-size:13px;letter-spacing:.04em;text-align:center}
+.ph.photo{height:340px}.ph.headshot{width:220px;height:220px}
+@media(max-width:900px){
+  .slide{padding:28px 22px 48px}.top{left:22px;right:22px;top:16px}.tag{margin-bottom:12px}
+  h1{font-size:43px}h2{font-size:29px}.quote{font-size:28px}.big{font-size:36px}
+  .g2,.g3,.g4,.split,.sources,.demo-two,.demo-two.compact,.concept-compare,.gap-grid{grid-template-columns:1fr;gap:10px}.flow,.ladder,.demo-flow,.demo-flow.six,.demo-flow.five{grid-template-columns:1fr;gap:8px}
+  .demo-content{padding-top:8px}.demo-insight{font-size:23px}.gap-chip,.demo-step{min-height:0}
+  .card{padding:13px 14px}.matrix{grid-template-columns:1fr}.matrix .hd{display:none}.matrix>div{padding:9px 10px;font-size:12px}.matrix .rowhd{background:var(--surface2)}
+  .photo{height:180px}.headshot{width:120px;height:120px}.arch-map{height:auto;max-height:none;aspect-ratio:auto;object-fit:contain}.step{min-height:0}.level{min-height:0}
+}
+@media(max-width:900px) and (orientation:landscape){
+  .arch-map{width:auto;height:calc(100vh - 108px);max-width:100%}
+}
+/* ===== P4 · 左右分栏：左 Loop(3/4) 右资产库(1/4) ===== */
+.content.split{flex-direction:row;align-items:center;justify-content:center;gap:48px}
+.loop-col{flex:3 1 0;min-width:0;display:flex;flex-direction:column;align-items:center}
+.asset-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:14px;align-self:center}
+.asset-sub{text-align:center;color:var(--muted);font-size:11px;letter-spacing:.1em;margin-bottom:12px}
+.loop-wrap{width:100%;max-width:760px;margin:0 auto}
+.loop-svg{width:100%;height:auto;max-height:52vh;display:block}
+.loop-cap{text-align:center;font-size:clamp(13px,1.15vw,15.5px);color:var(--muted2);line-height:1.45;max-width:720px;margin-top:-2px}
+.loop-cap b{color:var(--accent2);font-weight:780}
+.asset-label{text-align:center;color:var(--accent2);font-size:13px;font-weight:800;letter-spacing:.12em;margin-bottom:4px}
+.asset-label::before,.asset-label::after{content:"";display:inline-block;width:20px;height:1px;background:rgba(214,173,98,.45);vertical-align:middle;margin:0 8px}
+.asset{display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 10px}
+.asset-ico{width:30px;height:30px;margin-bottom:8px}
+.asset-ico svg{width:100%;height:100%;display:block}
+.asset-name{font-size:15px;font-weight:780;color:var(--hi);line-height:1.2}
+.asset-name span{display:block;font-size:10.5px;color:var(--muted);font-weight:600;letter-spacing:.08em;margin-top:3px}
+.asset-tag{margin-top:6px;font-size:12px;color:var(--accent2)}
+@media(max-width:900px){
+  .content.split{flex-direction:column;gap:18px}.loop-col{flex:1 1 auto}.asset-col{flex:1 1 auto;width:100%;max-width:560px}
+}
+@media(max-height:800px){
+  .loop-svg{max-height:46vh}.asset-col{flex-basis:264px}.asset{padding:11px 8px}.asset-ico{width:26px;height:26px;margin-bottom:6px}.asset-name{font-size:14px}.asset-tag{font-size:11.5px}.loop-cap{font-size:14px}
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- ===== 封面 ===== -->
+<section class="slide cover active">
+  <div class="top"><span>Hackathon Defense</span><span>AAA 全球记忆代理商</span></div>
+  <div class="kicker">Agent Memory Hub</div>
+  <h1>Agent 记忆管理系统</h1>
+  <p class="sub">让 Agent 沉淀经验，让人释放创造</p>
+  <div class="by">by AAA全球记忆代理商，队长：黄丹丹，队员：陆瑶、卓鹏程、石鹏、马倩</div>
+</section>
+
+<!-- ===== P1 钩子 0:00–1:00 ===== -->
+<section class="slide">
+  <div class="tag green">钩子</div>
+  <h2>这三种时刻，你一定经历过</h2>
+  <div class="content center">
+    <div class="g3">
+      <div class="card red-card"><span class="badge b-red">重复工作</span><h3 class="mt12">怎样减少使用 Agent 时的重复工作？</h3><p class="mu mt8">关掉窗口再打开，它又从第一行问你"这是什么项目"；一套流程跑通，下周换个人又从零摸索。</p></div>
+      <div class="card green-card"><span class="badge b-green">团队资产</span><h3 class="mt12">成功提效经验怎么变成团队资产？</h3><p class="mu mt8">复盘写了没人翻，经验留在谁的脑子里？AI 根本调用不到——因为它们压根不在 AI 能触达的地方。</p></div>
+      <div class="card gold-card"><span class="badge b-gold">稳定性</span><h3 class="mt12">同一 prompt，昨天惊艳今天翻车</h3><p class="mu mt8">质量全看"这次它恰好记住了没有"，时好时坏，无法预期。</p></div>
+    </div>
+    <div class="divider"></div>
+    <div class="quote" style="font-size:clamp(26px,3vw,42px)">它们，其实是同一个根因。</div>
+  </div>
+</section>
+
+<!-- ===== P2 根因 + 记忆定位 1:00–1:40 ===== -->
+<section class="slide">
+  <div class="tag">根因</div>
+  <div class="content center">
+    <div class="quote">记忆不是"记住对话"，<br>是"让 Agent 少走弯路"。</div>
+    <div class="divider"></div>
+    <div class="chain">
+      <span class="node">已有信息</span><span class="ar">→</span>
+      <span class="node">可复用记忆资产</span><span class="ar">→</span>
+      <span class="node">注入工作流</span><span class="ar">→</span>
+      <span class="node">更少 Turns</span><span class="ar">→</span>
+      <span class="node">更少返工</span><span class="ar">→</span>
+      <span class="node">更稳更高效</span>
+    </div>
+    <p class="sub mt30" style="text-align:center">根因只有一个——那些能让 Agent 少走弯路的信息，从来没被当成资产。凡是能复用、能省 turns、能避免返工的信息，都该被保存、组织、复用。</p>
+  </div>
+</section>
+
+<!-- ===== P3 方案 + 三大资产 1:40–3:00 ===== -->
+<section class="slide">
+  <div class="tag gold">方案</div>
+  <h2>给每次 Loop 加一条经验值</h2>
+  <div class="content split">
+    <!-- ===== 圆形闭环（视觉主角，左 3/4） ===== -->
+    <div class="loop-col">
+      <div class="loop-wrap">
+        <svg class="loop-svg" viewBox="180 28 640 504" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <marker id="loopArrow" markerWidth="11" markerHeight="11" refX="7.5" refY="4.5" orient="auto" markerUnits="strokeWidth">
+              <path d="M0 0 L9 4.5 L0 9 Z" fill="#d6ad62"/>
+            </marker>
+            <radialGradient id="hubG" cx="50%" cy="40%" r="70%">
+              <stop offset="0" stop-color="#1c2740"/><stop offset="1" stop-color="#11161f"/>
+            </radialGradient>
+          </defs>
+          <circle cx="500" cy="265" r="160" fill="none" stroke="#33415a" stroke-width="2" stroke-dasharray="2 7" opacity=".7"/>
+          <g fill="none" stroke="#d6ad62" stroke-width="2.6" marker-end="url(#loopArrow)">
+            <path d="M580 126.4 A160 160 0 0 1 638.6 185"/>
+            <path d="M638.6 345 A160 160 0 0 1 580 403.6"/>
+            <path d="M420 403.6 A160 160 0 0 1 361.4 345"/>
+            <path d="M361.4 185 A160 160 0 0 1 420 126.4"/>
+          </g>
+          <circle cx="500" cy="265" r="72" fill="url(#hubG)" stroke="#d6ad62" stroke-width="1.6"/>
+          <circle cx="500" cy="265" r="72" fill="none" stroke="rgba(214,173,98,.20)" stroke-width="6"/>
+          <text x="500" y="248" text-anchor="middle" font-size="11.5" letter-spacing="2.4" fill="#8793a7" font-weight="700">TEAM MEMORY</text>
+          <text x="500" y="280" text-anchor="middle" font-size="28" font-weight="900" fill="#f0d7a0" letter-spacing="1">LOOP</text>
+          <text x="500" y="303" text-anchor="middle" font-size="11.5" fill="#d6ad62">↻ 越用越聪明</text>
+          <g transform="translate(500,105)">
+            <rect x="-74" y="-46" width="148" height="92" rx="11" fill="#182030" stroke="#3d4a63" stroke-width="1.4"/>
+            <circle cx="-56" cy="-28" r="12" fill="#d6ad62"/>
+            <text x="-56" y="-23" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0b0d12">1</text>
+            <g transform="translate(6,-14)" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M0 -16 V -24"/><circle cx="0" cy="-26" r="2.4" fill="#f0d7a0" stroke="none"/>
+              <rect x="-19" y="-12" width="38" height="28" rx="9"/>
+              <circle cx="-7" cy="1" r="3.4" fill="#f0d7a0" stroke="none"/>
+              <circle cx="7" cy="1" r="3.4" fill="#f0d7a0" stroke="none"/>
+              <path d="M-6 8 H6" stroke-width="1.8"/>
+            </g>
+            <text x="2" y="28" text-anchor="middle" font-size="14" font-weight="760" fill="#f6f8fc">Agent 完成工作</text>
+            <text x="2" y="43" text-anchor="middle" font-size="10.5" fill="#8793a7">执行任务并产出结果</text>
+          </g>
+          <g transform="translate(660,265)">
+            <rect x="-74" y="-46" width="148" height="92" rx="11" fill="#182030" stroke="#3d4a63" stroke-width="1.4"/>
+            <circle cx="-56" cy="-28" r="12" fill="#d6ad62"/>
+            <text x="-56" y="-23" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0b0d12">2</text>
+            <g transform="translate(6,-13)" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="0" cy="-13" r="11"/>
+              <path d="M-17 22 Q0 1 17 22"/>
+              <path d="M-8 1 L-2 7 L11 -6" stroke-width="2.6"/>
+            </g>
+            <text x="2" y="28" text-anchor="middle" font-size="14" font-weight="760" fill="#f6f8fc">人或测试验证</text>
+            <text x="2" y="43" text-anchor="middle" font-size="10.5" fill="#8793a7">检查结果，确保正确</text>
+          </g>
+          <g transform="translate(500,425)">
+            <rect x="-74" y="-46" width="148" height="92" rx="11" fill="#182030" stroke="#3d4a63" stroke-width="1.4"/>
+            <circle cx="-56" cy="-28" r="12" fill="#d6ad62"/>
+            <text x="-56" y="-23" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0b0d12">3</text>
+            <g transform="translate(6,-13)" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="-25" y="-19" width="25" height="36" rx="3"/>
+              <path d="M-19 -9 H-7"/><path d="M-19 -2 H-7"/><path d="M-19 5 H-13"/>
+              <ellipse cx="13" cy="-10" rx="12" ry="4.5" fill="#d6ad62" fill-opacity=".82" stroke="none"/>
+              <path d="M1 -10 V12 a12 4.5 0 0 0 24 0 V-10"/>
+              <path d="M1 1 a12 4.5 0 0 0 24 0" stroke-width="1.4" opacity=".6"/>
+            </g>
+            <text x="2" y="28" text-anchor="middle" font-size="14" font-weight="760" fill="#f6f8fc">审核并写回 Memory</text>
+            <text x="2" y="43" text-anchor="middle" font-size="10.5" fill="#8793a7">结构化存入团队资产</text>
+          </g>
+          <g transform="translate(340,265)">
+            <rect x="-74" y="-46" width="148" height="92" rx="11" fill="#182030" stroke="#3d4a63" stroke-width="1.4"/>
+            <circle cx="-56" cy="-28" r="12" fill="#d6ad62"/>
+            <text x="-56" y="-23" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0b0d12">4</text>
+            <g transform="translate(6,-12)">
+              <rect x="-21" y="5" width="11" height="11" rx="2" fill="#f0d7a0" stroke="none"/>
+              <rect x="-7" y="-3" width="11" height="19" rx="2" fill="#f0d7a0" stroke="none"/>
+              <rect x="8" y="-13" width="11" height="29" rx="2" fill="#f0d7a0" stroke="none"/>
+              <g fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M-17 1 L15 -15"/><path d="M5 -15 H15 V-5"/>
+              </g>
+            </g>
+            <text x="2" y="28" text-anchor="middle" font-size="14" font-weight="760" fill="#f6f8fc">下一次从经验开始</text>
+            <text x="2" y="43" text-anchor="middle" font-size="10.5" fill="#8793a7">复用经验，更快更好</text>
+          </g>
+        </svg>
+      </div>
+      <p class="loop-cap">每跑完一圈闭环，团队记忆库就 <b>沉淀 1 条可复用经验</b> —— Agent 每次开工都站在上一次的成果上，<b>越用越聪明</b>。</p>
+    </div><!-- /loop-col -->
+
+    <!-- ===== 团队记忆资产库（右侧竖栏，占 1/4） ===== -->
+    <div class="asset-col">
+      <div class="asset-label">团队记忆资产库</div>
+      <div class="asset-sub">现在沉淀的三类资产</div>
+      <div class="card gold-card asset">
+        <div class="asset-ico"><svg viewBox="0 0 48 48" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M10 14a4 4 0 014-4h20a4 4 0 014 4v14a4 4 0 01-4 4H20l-7 6v-6h-3a4 4 0 01-4-4z"/>
+          <circle cx="18" cy="21" r="1.8" fill="#f0d7a0" stroke="none"/>
+          <circle cx="24" cy="21" r="1.8" fill="#f0d7a0" stroke="none"/>
+          <circle cx="30" cy="21" r="1.8" fill="#f0d7a0" stroke="none"/>
+        </svg></div>
+        <div class="asset-name">对话记忆<span>Chat Memory</span></div>
+        <div class="asset-tag">持续的理解</div>
+      </div>
+      <div class="card gold-card asset">
+        <div class="asset-ico"><svg viewBox="0 0 48 48" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M24 7l12 4v9c0 8-5 13-12 16-7-3-12-8-12-16v-9z"/>
+          <path d="M18 23l4 4 8-9" stroke-width="2.6"/>
+        </svg></div>
+        <div class="asset-name">技能<span>Skill</span></div>
+        <div class="asset-tag">验证过的做法</div>
+      </div>
+      <div class="card gold-card asset">
+        <div class="asset-ico"><svg viewBox="0 0 48 48" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M24 14c-4-2.5-9-3-13-1.6V34c4-1.4 9-1 13 1.6 4-2.6 9-3 13-1.6V12.4c-4-1.4-9-1-13 1.6z"/>
+          <path d="M24 14v20.6" stroke-width="1.8"/>
+        </svg></div>
+        <div class="asset-name">知识<span>Wiki</span></div>
+        <div class="asset-tag">可搜索的共识</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== P4 创新度 + 技术难度 2:55–3:55 ===== -->
+<section class="slide">
+  <div class="tag blue">创新度 + 技术难度</div>
+  <h2>和 Mem0 / Zep 区别？突破在三点</h2>
+  <div class="content center">
+    <div class="split" style="grid-template-columns:1fr;max-width:1040px;width:100%;margin:0 auto">
+      <div class="matrix wide">
+        <div class="hd">路线</div><div class="hd">关键特征</div>
+        <div class="rowhd">长上下文</div><div>能装但贵、易丢、不共享</div>
+        <div class="rowhd">RAG</div><div>检索增强，仍偏个人、难协作</div>
+        <div class="rowhd">Mem0·Zep</div><div>个人记忆 + 向量摘要，业界已有</div>
+        <div class="rowhd hl">本项目</div><div class="hl">团队共享资产库 + 框架无关 Proxy + 冷启动读档</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== P5 DEMO 3:55–5:55 ===== -->
+<section class="slide">
+  <div class="tag green">真实使用展示</div>
+  <h2>真实使用，同一个模型，同一个提示词，有无记忆输出天差地别</h2>
+  <div class="content demo-content">
+    <div class="demo-two single">
+      <div>
+        <div class="demo-insight green">注意：这不是 mock，是已经部署、可体验的真实使用场景。</div>
+        <p class="demo-note">开一个全新的 Cursor（无历史记忆）发模糊指令"优化一下首页信息流的历史策略"——泛泛而谈；挂上这个团队的 Agent 记忆（项目背景、历史数据、规范、踩坑）后，同一句指令精准输出。</p>
+        <div class="source-stack">
+          <div class="source-card"><a href="#">Team Memory 面板</a><br>三类系统生成资产一目了然；创建 Team 即信息共享单位。</div>
+        </div>
+        <div class="button-row">
+          <a class="demo-button" href="#" target="_blank" rel="noopener">打开 Team Memory 面板</a>
+          <a class="demo-button local" href="#" target="_blank" rel="noopener">体验 before / after 对比</a>
+          <a class="demo-button" href="#" target="_blank" rel="noopener">创建你的 Team</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== P7 收尾 6:35–7:00 ===== -->
+<section class="slide cover">
+  <div class="top"><span>Closing</span><span>AAA 全球记忆代理商</span></div>
+  <div class="kicker">Agents remember. Humans innovate.</div>
+  <h1 style="font-size:clamp(46px,6vw,82px)">让 Agent 沉淀经验，<br>让人来创造</h1>
+  <p class="sub">让每一次成功，都成为团队永远的资产。Agent 该记住的，不该每次重新教；重复的劳动，不该由人一遍遍兜底。</p>
+  <div class="by">队长 黄丹丹 · 队员 陆瑶 / 卓鹏程 / 石鹏 / 马倩 · 谢谢，欢迎提问</div>
+</section>
+
+</div>
+<div id="prog"></div><div id="counter"></div><div id="hint">← / → 翻页 · Esc 返回封面</div>
+<script>
+const replacement=document.getElementById('newDeckTemplate');
+if(replacement){
+  document.getElementById('deck').innerHTML=replacement.textContent.trim();
+}
+const slides=[...document.querySelectorAll('.slide')];
+let current=0;
+function show(i){
+  current=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,idx)=>s.classList.toggle('active',idx===current));
+  document.getElementById('prog').style.width=((current+1)/slides.length*100)+'%';
+  document.getElementById('counter').textContent=String(current+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+  history.replaceState(null,'','#'+(current+1));
+}
+function init(){
+  const n=parseInt(location.hash.replace('#',''),10);
+  if(n>=1&&n<=slides.length) current=n-1;
+  show(current);
+}
+window.addEventListener('hashchange',()=>{
+  const n=parseInt(location.hash.replace('#',''),10);
+  if(n>=1&&n<=slides.length && n-1!==current) show(n-1);
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();show(current+1)}
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();show(current-1)}
+  if(e.key==='Home'||e.key==='Escape'){e.preventDefault();show(0)}
+  if(e.key==='End'){e.preventDefault();show(slides.length-1)}
+});
+document.addEventListener('click',e=>{
+  if(e.target.closest('a')) return;
+  show(current+1);
+});
+init();
+</script>
+</body>
+</html>

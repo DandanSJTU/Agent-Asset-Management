@@ -317,3 +317,15 @@
   font-size: 12px;
   color: var(--tea-color-text-secondary);
 }
+
+/* 「选中即展示」面板的关闭按钮（仅传入 onClose 时渲染，头部操作栏最右） */
+._memory-skill-detail-close {
+  padding: 0 !important;
+  min-width: 24px !important;
+  flex-shrink: 0;
+  color: var(--tea-color-text-tertiary);
+}
+
+._memory-skill-detail-close:hover {
+  color: var(--tea-color-text-primary);
+}

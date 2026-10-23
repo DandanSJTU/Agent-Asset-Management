@@ -1,0 +1,84 @@
+{
+  "team": {
+    "teamId": "team-mockrec01",
+    "name": "首页信息流推荐 · AI-Native 小队（Mock）",
+    "description": "4 人 AI-Native 团队 mock 数据：产品 / 工程 / 算法 / 测试四个角色 Agent，围绕携程 Trip 首页信息流推荐（T 站 + C 站）沉淀的对话记忆、Skill 与 Wiki。用于资产库演示与后续数据模拟，非真实业务数据。",
+    "ownerUserId": "usr-mock-pm",
+    "status": "active",
+    "createdAt": "2026-09-01T10:00:00.000Z",
+    "updatedAt": "2026-10-16T18:00:00.000Z"
+  },
+  "users": [
+    {
+      "userId": "usr-mock-pm",
+      "name": "林夏（PM / Product-Engineer Hybrid）",
+      "jobDescription": "首页信息流推荐策略 PM：需求 Spec、指标定义、AB 决策、内容策略与流量治理；用 1-2 Page Spec 替代长 PRD，用原型替代评审会。",
+      "ownedAgentIds": ["agt-mock-pm"]
+    },
+    {
+      "userId": "usr-mock-eng",
+      "name": "周野（Builder / Full-stack Eng）",
+      "jobDescription": "推荐在线链路与特征管线工程：召回/粗排/精排/重排服务、退场配置、模型上线与回滚；AI 生成全栈代码，人做架构决策与 review。",
+      "ownedAgentIds": ["agt-mock-eng"]
+    },
+    {
+      "userId": "usr-mock-alg",
+      "name": "沈屿（Builder / 推荐算法）",
+      "jobDescription": "召回与排序模型迭代：精排多目标多场景、U2I/I2I 向量召回、大模型与生成式方向；离线指标与线上 AB 一致性负责。",
+      "ownedAgentIds": ["agt-mock-alg"]
+    },
+    {
+      "userId": "usr-mock-qa",
+      "name": "许岸（QA / Evals 维护，0.5 人）",
+      "jobDescription": "质量标准与 Evals 集维护：Badcase 分层归因、线上线下一致性、发布门禁；AI 自动跑测试，人做最终确认。",
+      "ownedAgentIds": ["agt-mock-qa"]
+    }
+  ],
+  "agents": [
+    {
+      "agentId": "agt-mock-pm",
+      "name": "产品策略 Agent（PE Hybrid）",
+      "description": "首页信息流推荐的产品策略副驾：写 1-2 Page Spec、定义指标与验收、做 AB 推全判断、维护内容策略与流量治理口径。",
+      "prompt": "你是首页信息流推荐团队的产品策略 Agent。先给结论再给依据；每个指标必须说明对解题的指导意义，并区分现象/相关/因果、标注证据强弱；未拍板的事写成『团队正在讨论』，不得写成确定结论。",
+      "ownerUserId": "usr-mock-pm",
+      "visibility": "team"
+    },
+    {
+      "agentId": "agt-mock-eng",
+      "name": "全栈工程 Agent（Builder）",
+      "description": "推荐在线链路的工程副驾：召回/排序服务、特征管线、配置与发布；负责架构决策、代码 review 与线上问题初判。",
+      "prompt": "你是首页信息流推荐团队的工程 Agent。改动先说影响面与回滚方式；阈值一律走配置不硬编码；给方案时先给接口契约再给实现。",
+      "ownerUserId": "usr-mock-eng",
+      "visibility": "team"
+    },
+    {
+      "agentId": "agt-mock-alg",
+      "name": "推荐算法 Agent（Builder）",
+      "description": "召回与排序模型的算法副驾：特征与模型迭代、AB 实验设计与分析、离线在线一致性核查。",
+      "prompt": "你是首页信息流推荐团队的算法 Agent。任何模型结论必须同时给出离线指标、线上 AB 与一致性三件套；未过一致性的改动不上线；指标必须标注口径（pv/uv、底表、实验号）。",
+      "ownerUserId": "usr-mock-alg",
+      "visibility": "team"
+    },
+    {
+      "agentId": "agt-mock-qa",
+      "name": "质量与 Evals Agent（QA 0.5 人）",
+      "description": "质量守门副驾：维护 Evals 集、做 Badcase 分层归因、跑发布门禁、盯线上线下一致性。",
+      "prompt": "你是首页信息流推荐团队的质量 Agent。先定义通过线再跑测试；指标异常先分层（用户/内容/位置/场景）再定环节，不跳结论；测试报告必须标注指标口径与数据来源。",
+      "ownerUserId": "usr-mock-qa",
+      "visibility": "team"
+    }
+  ],
+  "roles": [
+    { "slug": "product", "agentId": "agt-mock-pm", "userId": "usr-mock-pm", "displayName": "产品" },
+    { "slug": "engineering", "agentId": "agt-mock-eng", "userId": "usr-mock-eng", "displayName": "工程" },
+    { "slug": "algorithm", "agentId": "agt-mock-alg", "userId": "usr-mock-alg", "displayName": "算法" },
+    { "slug": "qa", "agentId": "agt-mock-qa", "userId": "usr-mock-qa", "displayName": "测试" }
+  ],
+  "wikis": [
+    { "slug": "shared", "wikiId": "wiki-mock-shared", "name": "团队共享百科", "agentId": "", "scope": "team" },
+    { "slug": "product", "wikiId": "wiki-mock-product", "name": "产品策略百科", "agentId": "agt-mock-pm", "scope": "agent" },
+    { "slug": "engineering", "wikiId": "wiki-mock-eng", "name": "工程实现百科", "agentId": "agt-mock-eng", "scope": "agent" },
+    { "slug": "algorithm", "wikiId": "wiki-mock-alg", "name": "算法实验百科", "agentId": "agt-mock-alg", "scope": "agent" },
+    { "slug": "qa", "wikiId": "wiki-mock-qa", "name": "质量与Evals百科", "agentId": "agt-mock-qa", "scope": "agent" }
+  ]
+}

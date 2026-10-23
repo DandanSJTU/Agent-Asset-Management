@@ -1,0 +1,555 @@
+/**
+ * AssetStatsSection 样式 — mem0 Dashboard 风格资产统计。
+ * 颜色统一走 Tea Design Token；图表三色固定（wiki 蓝 / skill 紫 / memory 青），
+ * 适配面板浅色主题。
+ */
+
+._astats-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ===== Header ===== */
+._astats-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+._astats-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tea-color-text-primary);
+}
+
+._astats-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--tea-color-text-tertiary);
+}
+
+._astats-header-ops {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 时间档位胶囊组（对齐 mem0 顶部 All time / 24h / 7d / 30d / 90d） */
+._astats-ranges {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--tea-color-border-primary-default);
+  border-radius: 9999px;
+  background: var(--tea-color-bg-secondary-default);
+  padding: 2px;
+}
+
+._astats-range-pill {
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  padding: 3px 12px;
+  font-size: 12px;
+  color: var(--tea-color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+  white-space: nowrap;
+}
+
+._astats-range-pill:hover {
+  color: var(--tea-color-text-primary);
+}
+
+._astats-range-pill--active {
+  background: var(--tea-color-bg-brand-default);
+  color: var(--tea-color-text-on-bg-brand-default);
+  font-weight: 500;
+}
+
+/* 口径切换（全部 / 团队 / 我的）：与时间档位同款胶囊，用虚线边框区分语义层级 */
+._astats-scopes {
+  border-style: dashed;
+  margin-right: 4px;
+}
+
+._astats-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--tea-color-border-primary-default);
+  border-radius: 9999px;
+  background: var(--tea-color-bg-primary-default);
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--tea-color-text-secondary);
+  cursor: pointer;
+}
+
+._astats-refresh:hover {
+  color: var(--tea-color-text-brand-default);
+  border-color: var(--tea-color-border-brand-default);
+}
+
+/* ===== 指标卡 ===== */
+._astats-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 1024px) {
+  ._astats-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+._astats-card {
+  border: 1px solid var(--tea-color-border-primary-default);
+  border-radius: 6px;
+  background: var(--tea-color-bg-secondary-default);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+._astats-card--accent {
+  border-color: var(--tea-color-border-brand-default);
+  background: var(--tea-color-bg-brand-lighten-default);
+}
+
+._astats-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+._astats-card-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+._astats-card-label {
+  font-size: 12px;
+  color: var(--tea-color-text-tertiary);
+}
+
+._astats-card-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 32px;
+  color: var(--tea-color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+._astats-card-sub {
+  font-size: 12px;
+  color: var(--tea-color-text-tertiary);
+  line-height: 16px;
+}
+
+._astats-card--accent ._astats-card-sub {
+  color: var(--tea-color-text-brand-default);
+}
+
+/* ===== 第二行：趋势 + 构成 ===== */
+._astats-panels {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 1024px) {
+  ._astats-panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+._astats-panel {
+  border: 1px solid var(--tea-color-border-primary-default);
+  border-radius: 6px;
+  background: var(--tea-color-bg-primary-default);
+  padding: 12px 14px;
+  min-width: 0;
+}
+
+._astats-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tea-color-text-primary);
+  margin-bottom: 8px;
+}
+
+._astats-empty {
+  padding: 40px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--tea-color-text-tertiary);
+}
+
+._astats-loading {
+  padding: 40px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--tea-color-text-tertiary);
+}
+
+._astats-warn {
+  border: 1px solid var(--tea-color-border-warning-default);
+  border-radius: 4px;
+  background: var(--tea-color-bg-warning-lighten-default);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--tea-color-text-warning-default);
+}
+
+/* ===== 趋势图（SVG） ===== */
+._astats-trend-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+._astats-trend-grid {
+  stroke: var(--tea-color-border-secondary-default);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+._astats-trend-ytick,
+._astats-trend-xtick,
+._astats-trend-unit {
+  fill: var(--tea-color-text-tertiary);
+  font-size: 10px;
+}
+
+._astats-trend-unit {
+  font-size: 11px;
+}
+
+._astats-bar--wiki {
+  fill: #4c8bf5;
+}
+
+._astats-bar--skill {
+  fill: #8b5cf6;
+}
+
+._astats-bar--memory {
+  fill: #14b8a6;
+}
+
+._astats-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+._astats-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--tea-color-text-secondary);
+}
+
+._astats-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+._astats-dot--wiki {
+  background: #4c8bf5;
+}
+
+._astats-dot--skill {
+  background: #8b5cf6;
+}
+
+._astats-dot--memory {
+  background: #14b8a6;
+}
+
+/* ===== 构成表 ===== */
+._astats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+._astats-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--tea-color-text-tertiary);
+  border-bottom: 1px solid var(--tea-color-border-primary-default);
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+._astats-table td {
+  padding: 7px 8px;
+  color: var(--tea-color-text-secondary);
+  border-bottom: 1px solid var(--tea-color-border-secondary-default);
+}
+
+._astats-table tr:last-child td {
+  border-bottom: none;
+}
+
+._astats-table th._astats-num,
+._astats-table td._astats-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+._astats-table td._astats-strong {
+  font-weight: 600;
+  color: var(--tea-color-text-primary);
+}
+
+._astats-table td._astats-na {
+  color: var(--tea-color-text-disabled);
+}
+
+._astats-table tr._astats-table-total td {
+  background: var(--tea-color-bg-secondary-default);
+  font-weight: 500;
+}
+
+._astats-note {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--tea-color-text-tertiary);
+  line-height: 16px;
+}
+
+/* ===== ⓘ 口径说明 tooltip ===== */
+._astats-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--tea-color-text-tertiary);
+  cursor: help;
+  border-radius: 50%;
+  user-select: none;
+}
+
+._astats-info:hover,
+._astats-info:focus {
+  color: var(--tea-color-text-brand-default);
+  outline: none;
+}
+
+._astats-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  padding: 8px 10px;
+  background: var(--tea-color-bg-primary-default);
+  border: 1px solid var(--tea-color-border-primary-default);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--tea-color-text-secondary);
+  white-space: normal;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s;
+  z-index: 20;
+  pointer-events: none;
+}
+
+._astats-info:hover ._astats-tip,
+._astats-info:focus ._astats-tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 更新于 N 分钟前 */
+._astats-updated {
+  font-size: 11px;
+  color: var(--tea-color-text-disabled);
+  text-align: right;
+  margin-top: -4px;
+}
+
+/* 指标卡淡化（无数据） */
+._astats-card--faded {
+  opacity: 0.62;
+}
+
+._astats-card--faded ._astats-card-value {
+  color: var(--tea-color-text-disabled);
+}
+
+/* 明细折叠链接 */
+._astats-link {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--tea-color-text-brand-default);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 0 0 8px;
+}
+
+/* ===== 资产构成横条（mem0 风格） ===== */
+._astats-comp {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+._astats-comp-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 48px 40px;
+  align-items: center;
+  gap: 8px;
+}
+
+._astats-comp-label {
+  font-size: 12px;
+  color: var(--tea-color-text-secondary);
+  white-space: nowrap;
+}
+
+._astats-comp-track {
+  height: 12px;
+  background: var(--tea-color-bg-secondary-default);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--tea-color-border-secondary-default);
+}
+
+._astats-comp-fill {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  min-width: 2px;
+}
+
+._astats-comp-fill--na {
+  width: 100%;
+  background: var(--tea-color-bg-secondary-default);
+}
+
+._astats-comp-pct {
+  font-size: 11.5px;
+  text-align: right;
+  color: var(--tea-color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+._astats-comp-val {
+  font-size: 12px;
+  text-align: right;
+  color: var(--tea-color-text-primary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* ===== 对话记忆分层漏斗（L0–L3） ===== */
+._astats-lad {
+  margin-top: 4px;
+}
+
+._astats-lad-track {
+  display: flex;
+  height: 24px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--tea-color-border-secondary-default);
+  background: var(--tea-color-bg-secondary-default);
+}
+
+._astats-lad-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+._astats-lad-rest {
+  background: var(--tea-color-bg-secondary-default);
+}
+
+._astats-lad--l0 { background: #94a3b8; }
+._astats-lad--l1 { background: #14b8a6; }
+._astats-lad--l2 { background: #4c8bf5; }
+._astats-lad--l3 { background: #d4a017; }
+
+._astats-lad-cap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--tea-color-text-secondary);
+}
+
+._astats-lad-cap i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+/* ===== 活跃贡献者 ===== */
+._astats-contrib {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+._astats-contrib li {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--tea-color-text-secondary);
+}
+
+._astats-contrib-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tea-color-border-brand-default);
+}
+
+._astats-contrib-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--tea-color-text-primary);
+}

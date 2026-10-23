@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>P4 重设计 · 突出 Loop 闭环（预览）</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0d12;--surface:#121722;--surface2:#182030;--surface3:#202b3d;
+  --line:#263247;--line2:#344158;
+  --text:#d7dfeb;--hi:#f6f8fc;--muted:#8793a7;--muted2:#a9b4c5;
+  --accent:#d6ad62;--accent2:#f0d7a0;--accent-d:rgba(214,173,98,.11);--accent-b:rgba(214,173,98,.34);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:
+  radial-gradient(80% 65% at 12% 10%,rgba(214,173,98,.085),transparent 58%),
+  radial-gradient(72% 60% at 84% 12%,rgba(120,135,160,.075),transparent 56%),
+  linear-gradient(180deg,rgba(255,255,255,.025),transparent 22%)}
+.deck{width:100vw;height:100vh;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;padding:46px 72px 50px;display:flex;flex-direction:column}
+.top{position:absolute;top:30px;left:76px;right:76px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.tag{display:flex;align-items:center;gap:10px;margin-bottom:12px;color:var(--accent2);font-size:11px;font-weight:850;letter-spacing:.18em;text-transform:uppercase}
+.tag::before{content:"";width:26px;height:2px;background:var(--accent2);border-radius:2px}
+h2{font-size:clamp(30px,3.4vw,50px);line-height:1.08;letter-spacing:-.035em;color:var(--hi);font-weight:880}
+.content{flex:1;min-height:0;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:52px}
+.loop-wrap{width:100%;max-width:620px;margin:0 auto}
+.loop-svg{width:100%;height:auto;max-height:46vh;display:block}
+.loop-cap{text-align:center;font-size:clamp(13px,1.15vw,15.5px);color:var(--muted2);line-height:1.45;max-width:720px;margin-top:-2px}
+.loop-cap b{color:var(--accent2);font-weight:780}
+.loop-col{flex:0 1 640px;min-width:0;display:flex;flex-direction:column;align-items:center}
+.asset-col{flex:0 0 296px;display:flex;flex-direction:column;gap:14px;align-self:center}
+.asset-sub{text-align:center;color:var(--muted);font-size:11px;letter-spacing:.1em;margin-bottom:12px}
+.asset-label{text-align:center;color:var(--accent2);font-size:13px;font-weight:800;letter-spacing:.12em;margin-bottom:4px}
+.asset-label::before,.asset-label::after{content:"";display:inline-block;width:20px;height:1px;background:rgba(214,173,98,.45);vertical-align:middle;margin:0 8px}
+.assets{gap:14px}
+.asset{display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 10px}
+.asset-ico{width:30px;height:30px;margin-bottom:8px}
+.asset-ico svg{width:100%;height:100%;display:block}
+.asset-name{font-size:15px;font-weight:780;color:var(--hi);line-height:1.2}
+.asset-name span{display:block;font-size:10.5px;color:var(--muted);font-weight:600;letter-spacing:.08em;margin-top:3px}
+.asset-tag{margin-top:6px;font-size:12px;color:var(--accent2)}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;max-width:1080px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01)),var(--surface);border:1px solid var(--line);border-radius:8px;padding:15px 18px}
+.gold-card,.red-card,.green-card{background:linear-gradient(180deg,rgba(255,255,255,.036),rgba(255,255,255,.012)),var(--surface);border-color:var(--line2)}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:780;letter-spacing:.04em;white-space:nowrap;background:rgba(214,173,98,.13);color:var(--accent2)}
+h3{font-size:clamp(16px,1.4vw,20px);line-height:1.28;color:var(--hi);font-weight:760;margin-top:10px}
+p{font-size:clamp(13px,1.15vw,15px);line-height:1.55;color:var(--muted2);margin-top:7px}
+.mt8{margin-top:8px}
+#counter{position:fixed;right:26px;bottom:16px;color:var(--muted);font-size:11px;letter-spacing:.12em}
+@media(max-width:900px){.slide{padding:26px 22px 46px}.top{left:22px;right:22px;top:14px}.content{flex-direction:column;gap:18px}.loop-col{flex:1 1 auto}.asset-col{flex:1 1 auto;width:100%;max-width:560px}.g3{grid-template-columns:1fr;gap:10px}}
+@media(max-height:800px){h2{font-size:clamp(26px,3vw,38px)}.loop-svg{max-height:42vh}.asset-col{flex-basis:264px}.asset{padding:11px 8px}.asset-ico{width:26px;height:26px;margin-bottom:6px}.asset-name{font-size:14px}.asset-tag{font-size:11.5px}.loop-cap{font-size:14px}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- ===== P4 重设计：突出 Loop 闭环 ===== -->
+<section class="slide">
+  <div class="top"><span>Hackathon Defense · 7 min</span><span>AAA 全球记忆代理商</span></div>
+  <div class="tag">方案 · 1:40–3:00</div>
+  <h2>给每次 Loop 加一条经验值</h2>
+
+  <div class="content">
+    <!-- ===== 圆形闭环（视觉主角） ===== -->
+    <div class="loop-col">
+    <div class="loop-wrap">
+      <svg class="loop-svg" viewBox="180 28 640 504" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="loopArrow" markerWidth="11" markerHeight="11" refX="7.5" refY="4.5" orient="auto" markerUnits="strokeWidth">
+            <path d="M0 0 L9 4.5 L0 9 Z" fill="#d6ad62"/>
+          </marker>
+          <radialGradient id="hubG" cx="50%" cy="40%" r="70%">
+            <stop offset="0" stop-color="#1c2740"/><stop offset="1" stop-color="#11161f"/>
+          </radialGradient>
+        </defs>
+
+        <!-- 隐约的环轨 -->
+        <circle cx="500" cy="265" r="160" fill="none" stroke="#33415a" stroke-width="2" stroke-dasharray="2 7" opacity=".7"/>
+
+        <!-- 顺时针弧箭头：上→右→下→左→上 -->
+        <g fill="none" stroke="#d6ad62" stroke-width="2.6" marker-end="url(#loopArrow)">
+          <path d="M580 126.4 A160 160 0 0 1 638.6 185"/>
+          <path d="M638.6 345 A160 160 0 0 1 580 403.6"/>
+          <path d="M420 403.6 A160 160 0 0 1 361.4 345"/>
+          <path d="M361.4 185 A160 160 0 0 1 420 126.4"/>
+        </g>
+
+        <!-- 中心枢纽 -->
+        <circle cx="500" cy="265" r="72" fill="url(#hubG)" stroke="#d6ad62" stroke-width="1.6"/>
+        <circle cx="500" cy="265" r="72" fill="none" stroke="rgba(214,173,98,.20)" stroke-width="6"/>
+        <text x="500" y="248" text-anchor="middle" font-size="11.5" letter-spacing="2.4" fill="#8793a7" font-weight="700">TEAM MEMORY</text>
+        <text x="500" y="280" text-anchor="middle" font-size="28" font-weight="900" fill="#f0d7a0" letter-spacing="1">LOOP</text>
+        <text x="500" y="303" text-anchor="middle" font-size="11.5" fill="#d6ad62">↻ 越用越聪明</text>
+
+        <!-- 节点 1 · 上 -->
+        <g transform="translate(500,105)">
+          <rect x="-74" y="-46" width="148" height="92" rx="11" fill="#182030" stroke="#3d4a63" stroke-width="1.4"/>
+          <circle cx="-56" cy="-28" r="12" fill="#d6ad62"/>
+          <text x="-56" y="-23" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0b0d12">1</text>
+          <g transform="translate(6,-14)" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M0 -16 V -24"/><circle cx="0" cy="-26" r="2.4" fill="#f0d7a0" stroke="none"/>
+            <rect x="-19" y="-12" width="38" height="28" rx="9"/>
+            <circle cx="-7" cy="1" r="3.4" fill="#f0d7a0" stroke="none"/>
+            <circle cx="7" cy="1" r="3.4" fill="#f0d7a0" stroke="none"/>
+            <path d="M-6 8 H6" stroke-width="1.8"/>
+          </g>
+          <text x="2" y="28" text-anchor="middle" font-size="14" font-weight="760" fill="#f6f8fc">Agent 完成工作</text>
+          <text x="2" y="43" text-anchor="middle" font-size="10.5" fill="#8793a7">执行任务并产出结果</text>
+        </g>
+
+        <!-- 节点 2 · 右 -->
+        <g transform="translate(660,265)">
+          <rect x="-74" y="-46" width="148" height="92" rx="11" fill="#182030" stroke="#3d4a63" stroke-width="1.4"/>
+          <circle cx="-56" cy="-28" r="12" fill="#d6ad62"/>
+          <text x="-56" y="-23" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0b0d12">2</text>
+          <g transform="translate(6,-13)" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="0" cy="-13" r="11"/>
+            <path d="M-17 22 Q0 1 17 22"/>
+            <path d="M-8 1 L-2 7 L11 -6" stroke-width="2.6"/>
+          </g>
+          <text x="2" y="28" text-anchor="middle" font-size="14" font-weight="760" fill="#f6f8fc">人或测试验证</text>
+          <text x="2" y="43" text-anchor="middle" font-size="10.5" fill="#8793a7">检查结果，确保正确</text>
+        </g>
+
+        <!-- 节点 3 · 下 -->
+        <g transform="translate(500,425)">
+          <rect x="-74" y="-46" width="148" height="92" rx="11" fill="#182030" stroke="#3d4a63" stroke-width="1.4"/>
+          <circle cx="-56" cy="-28" r="12" fill="#d6ad62"/>
+          <text x="-56" y="-23" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0b0d12">3</text>
+          <g transform="translate(6,-13)" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="-25" y="-19" width="25" height="36" rx="3"/>
+            <path d="M-19 -9 H-7"/><path d="M-19 -2 H-7"/><path d="M-19 5 H-13"/>
+            <ellipse cx="13" cy="-10" rx="12" ry="4.5" fill="#d6ad62" fill-opacity=".82" stroke="none"/>
+            <path d="M1 -10 V12 a12 4.5 0 0 0 24 0 V-10"/>
+            <path d="M1 1 a12 4.5 0 0 0 24 0" stroke-width="1.4" opacity=".6"/>
+          </g>
+          <text x="2" y="28" text-anchor="middle" font-size="14" font-weight="760" fill="#f6f8fc">审核并写回 Memory</text>
+          <text x="2" y="43" text-anchor="middle" font-size="10.5" fill="#8793a7">结构化存入团队资产</text>
+        </g>
+
+        <!-- 节点 4 · 左 -->
+        <g transform="translate(340,265)">
+          <rect x="-74" y="-46" width="148" height="92" rx="11" fill="#182030" stroke="#3d4a63" stroke-width="1.4"/>
+          <circle cx="-56" cy="-28" r="12" fill="#d6ad62"/>
+          <text x="-56" y="-23" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0b0d12">4</text>
+          <g transform="translate(6,-12)">
+            <rect x="-21" y="5" width="11" height="11" rx="2" fill="#f0d7a0" stroke="none"/>
+            <rect x="-7" y="-3" width="11" height="19" rx="2" fill="#f0d7a0" stroke="none"/>
+            <rect x="8" y="-13" width="11" height="29" rx="2" fill="#f0d7a0" stroke="none"/>
+            <g fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M-17 1 L15 -15"/><path d="M5 -15 H15 V-5"/>
+            </g>
+          </g>
+          <text x="2" y="28" text-anchor="middle" font-size="14" font-weight="760" fill="#f6f8fc">下一次从经验开始</text>
+          <text x="2" y="43" text-anchor="middle" font-size="10.5" fill="#8793a7">复用经验，更快更好</text>
+        </g>
+      </svg>
+    </div>
+
+    <p class="loop-cap">每跑完一圈闭环，团队记忆库就 <b>沉淀 1 条可复用经验</b> —— Agent 每次开工都站在上一次的成果上，<b>越用越聪明</b>。</p>
+    </div><!-- /loop-col -->
+
+    <!-- ===== 团队记忆资产库（可视化，右侧竖栏） ===== -->
+    <div class="asset-col">
+      <div class="asset-label">团队记忆资产库</div>
+      <div class="asset-sub">现在沉淀的三类资产</div>
+        <div class="card gold-card asset">
+          <div class="asset-ico"><svg viewBox="0 0 48 48" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M10 14a4 4 0 014-4h20a4 4 0 014 4v14a4 4 0 01-4 4H20l-7 6v-6h-3a4 4 0 01-4-4z"/>
+            <circle cx="18" cy="21" r="1.8" fill="#f0d7a0" stroke="none"/>
+            <circle cx="24" cy="21" r="1.8" fill="#f0d7a0" stroke="none"/>
+            <circle cx="30" cy="21" r="1.8" fill="#f0d7a0" stroke="none"/>
+          </svg></div>
+          <div class="asset-name">对话记忆<span>Chat Memory</span></div>
+          <div class="asset-tag">持续的理解</div>
+        </div>
+        <div class="card gold-card asset">
+          <div class="asset-ico"><svg viewBox="0 0 48 48" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M24 7l12 4v9c0 8-5 13-12 16-7-3-12-8-12-16v-9z"/>
+            <path d="M18 23l4 4 8-9" stroke-width="2.6"/>
+          </svg></div>
+          <div class="asset-name">技能<span>Skill</span></div>
+          <div class="asset-tag">验证过的做法</div>
+        </div>
+        <div class="card gold-card asset">
+          <div class="asset-ico"><svg viewBox="0 0 48 48" fill="none" stroke="#f0d7a0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M24 14c-4-2.5-9-3-13-1.6V34c4-1.4 9-1 13 1.6 4-2.6 9-3 13-1.6V12.4c-4-1.4-9-1-13 1.6z"/>
+            <path d="M24 14v20.6" stroke-width="1.8"/>
+          </svg></div>
+          <div class="asset-name">知识<span>Wiki</span></div>
+          <div class="asset-tag">可搜索的共识</div>
+        </div>
+    </div>
+  </div>
+</section>
+
+</div>
+<div id="counter">04 / 08</div>
+</body>
+</html>

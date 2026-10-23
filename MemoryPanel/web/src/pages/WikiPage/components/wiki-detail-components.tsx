@@ -32,6 +32,7 @@ export function WikiActions({
   onAllocate,
   onUnbind,
   onDelete,
+  onToggleVisibility,
 }: {
   source: WikiDetail;
   scopeTab: WikiScopeTab;
@@ -41,6 +42,8 @@ export function WikiActions({
   onAllocate: (target: { wiki_id: string; name: string }) => void;
   onUnbind: (wikiId: string) => void;
   onDelete: (wikiId: string, name: string) => void;
+  /** 共享 / 设为私密切换（仅「我的」档使用） */
+  onToggleVisibility?: (wikiId: string, next: 'team' | 'private') => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -48,7 +51,45 @@ export function WikiActions({
       <Button type="weak" disabled={isCurrentIngesting} onClick={() => onIngest(source.wiki_id)}>
         <StarIcon size={14} /> {isCurrentIngesting ? t('wiki.action.ingestBusy') : t('wiki.action.ingest')}
       </Button>
-      {scopeTab === 'fixed' ? (
+      {/*
+        「我的」档 = owner=我 的 wiki，里面既有"已共享"也有"仅我可见"，所以这里
+        给的是**切换器**而不是单向的共享按钮：
+          - 仅我可见 →「共享到团队」（共享后可分配）
+          - 已共享   →「设为私密」
+        私密条目不给「分配到 Agent」：private 只由 meta 权限兜底，分配给 Agent 后
+        使用该 Agent 的其他成员就能读到内容，等于绕过私密。
+      */}
+      {scopeTab === 'mine' ? (
+        <>
+          <Button
+            type="weak"
+            disabled={!onToggleVisibility}
+            tooltip={
+              source.visibility === 'team'
+                ? t('wiki.action.unshare.tooltip')
+                : t('wiki.action.share.tooltip')
+            }
+            onClick={() =>
+              onToggleVisibility?.(
+                source.wiki_id,
+                source.visibility === 'team' ? 'private' : 'team',
+              )
+            }
+          >
+            {source.visibility === 'team' ? t('wiki.action.unshare') : t('wiki.action.share')}
+          </Button>
+          {source.visibility === 'team' && (
+            <Button
+              type="weak"
+              disabled={source.status !== 'ready'}
+              tooltip={source.status === 'ready' ? undefined : t('wiki.action.allocate.disabled')}
+              onClick={() => onAllocate({ wiki_id: source.wiki_id, name: source.name })}
+            >
+              {t('wiki.action.allocate')}
+            </Button>
+          )}
+        </>
+      ) : scopeTab === 'fixed' ? (
         <Button type="weak" onClick={() => onUnbind(source.wiki_id)}>
           {t('wiki.action.unbind')}
         </Button>

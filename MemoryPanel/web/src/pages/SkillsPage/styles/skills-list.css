@@ -52,3 +52,293 @@
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
+
+/* ============================================================
+ * 「选中即展示」推挤式详情面板（仅 MySkillsPage 使用）
+ * 设计稿：docs/my-skills-detail-motion-design.html（v2 推挤式揭示）
+ *  - 未选中：右栏 width:0 不占位，列表全宽
+ *  - 选中：右栏 width 0→var(--mysk-w) 生长并推挤列表（入场 300ms / 退场 240ms）
+ *  - 内容层固定宽度不随动画回流，overflow:hidden 由外层裁切出「擦除揭示」效果
+ *  - ≥1180px docked 可拖宽｜960–1180 覆盖抽屉+遮罩｜<960 全屏替换
+ * ============================================================ */
+._mysk-split {
+  display: flex;
+  align-items: stretch;
+  height: calc(100vh - 220px);
+  min-height: 480px;
+}
+
+._mysk-list {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
+/* ---- 搜索行：全宽 SearchBox + 最近修改时间档位胶囊 ---- */
+._mysk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* tea SearchBox 渲染为 .tea-form--search（默认 width:200px、inline-block）包一层
+   .tea-search（className 落在内层）。拉伸必须作用在外层 flex item 上： */
+._mysk-toolbar > .tea-form--search {
+  flex: 1 1 auto;
+  min-width: 200px;
+}
+
+._mysk-toolbar ._mysk-search {
+  width: 100%;
+  min-width: 0;
+}
+
+._mysk-ranges {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 3px;
+  background: var(--tea-color-bg-secondary, #f3f3f3);
+  border-radius: 8px;
+}
+
+._mysk-range {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--tea-color-text-secondary, #666);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+._mysk-range:hover {
+  color: var(--tea-color-text, #1a1a1a);
+}
+
+._mysk-range.is-active {
+  background: var(--tea-color-bg, #fff);
+  color: var(--tea-color-text, #1a1a1a);
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+._mysk-range:focus-visible {
+  outline: 2px solid var(--tea-color-brand, #0066ff);
+  outline-offset: 1px;
+}
+
+/* 窄屏：筛选胶囊可横向滚动，搜索框保底宽度 */
+@media (max-width: 767px) {
+  ._mysk-toolbar {
+    flex-wrap: wrap;
+  }
+
+  ._mysk-ranges {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+}
+
+/* ---- 列表表格形态（对齐「本地 Agent 技能」页的表格观感） ----
+   卡片即滚动容器：表头 CSS 吸顶，行 hover 高亮由 tea Table 默认提供。 */
+._mysk-table-card {
+  height: 100%;
+  overflow-y: auto;
+  background: transparent;
+  box-shadow: none;
+}
+
+._mysk-table-card .tea-card__body {
+  padding: 0;
+  border: 1px solid var(--tea-color-border-level-2, #e3e3e3);
+  border-radius: 6px;
+  background: var(--tea-color-bg, #fff);
+  min-height: 100%;
+}
+
+._mysk-table-card thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--tea-color-bg, #fff);
+}
+
+/* 行可点（点击 = 选中，唤起详情推挤面板） */
+._mysk-row {
+  cursor: pointer;
+}
+
+._mysk-row.is-selected > td {
+  background: var(--tea-color-bg-primary-deep, #e8f3ff) !important;
+}
+
+._mysk-cell-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+._mysk-cell-name-text {
+  font-weight: 600;
+  color: var(--tea-color-text, #1a1a1a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+._mysk-cell-time {
+  color: var(--tea-color-text-secondary, #666);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+._mysk-cell-path {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+._mysk-cell-path code {
+  font-family: var(--tea-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  color: var(--tea-color-text-secondary, #666);
+  background: var(--tea-color-bg-secondary, #f3f3f3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+._mysk-detail {
+  position: relative;
+  flex: 0 0 auto;
+  width: 0;
+  height: 100%;
+  overflow: hidden;
+  transition: width 240ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+._mysk-detail.is-open {
+  width: var(--mysk-w, 460px);
+  transition-duration: 300ms;
+}
+
+/* 拖拽过程中关闭过渡，避免宽度追着手感跑出延迟 */
+._mysk-detail.is-resizing {
+  transition: none;
+}
+
+/* 内容层固定宽度：动画期间不回流，长 JSON 不会跳换行位置 */
+._mysk-detail-inner {
+  width: var(--mysk-w, 460px);
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* 拖宽手柄：贴在面板左缘（仅 docked 态渲染 + 显示） */
+._mysk-detail-resizer {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 5;
+}
+
+/* ---- 面板宽度有限（默认 460px）：详情头部紧凑化 ----
+   按钮组缩字号减 padding；名称从 break-all 换行改为单行省略，
+   完整名称由 skill_id 行与悬浮 title 兜底。 */
+._mysk-detail ._memory-skill-detail-actions .tea-btn {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+._mysk-detail ._memory-skill-detail-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+}
+
+/* 窄屏遮罩：默认（docked）不渲染视觉效果 */
+._mysk-mask {
+  display: none;
+}
+
+/* ---- 960–1180px：覆盖抽屉（复用洞察 modal 交互模型） ---- */
+@media (max-width: 1179px) {
+  ._mysk-split {
+    height: auto;
+    min-height: 0;
+  }
+
+  ._mysk-mask {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  ._mysk-detail {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh;
+    width: min(var(--mysk-w, 460px), 92vw);
+    max-width: 92vw;
+    transform: translateX(100%);
+    transition: transform 240ms cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.14);
+    z-index: 91;
+  }
+
+  ._mysk-detail.is-open {
+    width: min(var(--mysk-w, 460px), 92vw);
+    transform: translateX(0);
+    transition-duration: 300ms;
+  }
+
+  ._mysk-detail-inner {
+    width: 100%;
+  }
+
+  ._mysk-detail-resizer {
+    display: none;
+  }
+}
+
+/* ---- <960px：全屏替换 ---- */
+@media (max-width: 959px) {
+  ._mysk-detail,
+  ._mysk-detail.is-open {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}
+
+/* ---- 动效降级 ---- */
+@media (prefers-reduced-motion: reduce) {
+  ._mysk-detail,
+  ._mysk-detail.is-open {
+    transition: none;
+  }
+}

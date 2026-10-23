@@ -1,7 +1,7 @@
 /**
  * GlobalHeader — 全局顶栏（跨越侧边栏 + 内容区，最外层通栏）
  *
- *   左侧：品牌 Logo「Agent 资产管理」 + 分隔线 + 团队切换器（TeamSwitcher）
+ *   左侧：品牌 Logo「Agent记忆管理系统」 + 分隔线 + 团队切换器（TeamSwitcher）
  *   右侧：同步状态指示 + 语言切换 + 用户头像菜单
  */
 import { useState } from 'react';
@@ -52,7 +52,7 @@ export function GlobalHeader({
       {/* 左侧：品牌 + 团队切换器 */}
       <div className="_memory-global-header-left">
         <div className="_memory-global-header-brand">
-          <img src="/logo.png" alt="Agent 资产管理" className="_memory-global-header-logo" />
+          <img src="/logo.png" alt="Agent记忆管理系统" className="_memory-global-header-logo" />
           <span className="_memory-global-header-brand-text">{t('header.brand')}</span>
         </div>
         <TeamSwitcher userRole={userRole} />

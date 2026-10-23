@@ -1,7 +1,7 @@
 import type { Hono } from 'hono';
 import type { PanelDeps } from '../../panel-deps.js';
 import { validatePanelMetaHeaders } from '../middleware/validate-panel-headers.js';
-import { scanLocalAgentSkills } from '../../lib/scan-local-agent-skills.js';
+import { scanLocalAgentSkills, readLocalAgentSkillContent } from '../../lib/scan-local-agent-skills.js';
 
 /**
  * GET /api/v1/local-agent-skills —— 扫描本机所有 Agent 客户端的本地 skill 库。
@@ -39,6 +39,36 @@ export function registerLocalAgentSkillRoutes(api: Hono, deps: PanelDeps): void 
           },
           500,
         );
+      }
+    },
+  );
+
+  /**
+   * GET /api/v1/local-agent-skills/content?path=<skill-dir> —— 读取单个本地 skill 的完整内容。
+   *
+   * 供「从本地导入」落库：后端按 path 读取 SKILL.md（content）+ 其余资源文件
+   * （resources，utf-8/base64 自动判定），返回给前端后直接交给 personal-skills/create。
+   * path 必须是已知 agent root 子目录，否则返回 PATH_NOT_ALLOWED（防目录遍历）。
+   */
+  api.get(
+    '/local-agent-skills/content',
+    validatePanelMetaHeaders(deps),
+    async (c) => {
+      const path = c.req.query('path');
+      if (!path || typeof path !== 'string') {
+        return c.json(
+          { code: 400, message: 'MISSING_PATH', request_id: c.get('reqId') ?? '', data: null },
+          400,
+        );
+      }
+      try {
+        const data = readLocalAgentSkillContent(path, process.cwd());
+        return c.json({ code: 0, message: 'ok', request_id: c.get('reqId') ?? '', data });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const code = msg === 'PATH_NOT_ALLOWED' ? 400 : 500;
+        const message = msg === 'PATH_NOT_ALLOWED' ? 'PATH_NOT_ALLOWED' : 'READ_LOCAL_SKILL_FAILED';
+        return c.json({ code, message, request_id: c.get('reqId') ?? '', data: null }, code);
       }
     },
   );

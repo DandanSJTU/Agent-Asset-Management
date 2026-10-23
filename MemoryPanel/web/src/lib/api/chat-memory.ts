@@ -77,6 +77,14 @@ export const chatMemoryApi = {
   myAgents: (teamId: string) =>
     chatMemoryCall<{ items: ChatMemoryBlock[] }>('my-agents', { team_id: teamId }),
 
+  /**
+   * 「我的」tab：owner=me 的 chat_memory 资产（后端按 auth/verify 反查 caller，
+   * 不信任前端传 user_id）。返回**含已共享**的全部自有资产，带 scope 字段，
+   * 前端需自行筛 scope==='private' 才是「仅我可见」口径。
+   */
+  mine: (teamId: string) =>
+    chatMemoryCall<{ items: ChatMemoryBlock[]; total: number }>('mine', { team_id: teamId }),
+
   /** L0/L1/L2/L3 分层懒加载；L2 可传 path 懒读单个 Markdown 原文。
    *  L0 游标分页：第一页传 offset=0；后续页传 beforeTs（最后一条消息的 created_at），
    *  后端用 time_end 过滤，offset 归零，避免 VDB 大 offset 扫描。 */

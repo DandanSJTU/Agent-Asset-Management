@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
@@ -19,6 +20,7 @@ import { registerKnowledgeRoutes } from './routes/knowledge/index.js';
 import { registerAuthRoutes, registerWoaIngressRoutes } from './routes/auth.js';
 import { registerPersonalSpaceRoutes } from './routes/personal-space.js';
 import { registerLayeredRefineRoutes } from './routes/layered-refine.js';
+import { registerAiCollabRoutes } from './routes/ai-collab.js';
 
 const API_PREFIX = '/api/v1';
 
@@ -58,6 +60,8 @@ export function buildPanelApp(deps: PanelDeps): Hono {
   registerPersonalSpaceRoutes(api, deps);
   // 分层提炼（Layered Refine）独立第二车道：复用 agents/layered-refine 引擎（MemoryCore 零改动）
   registerLayeredRefineRoutes(api, deps);
+  // AI 协作：记忆资产对比演示（demo 版，脚本化内容；后续可接真实检索 + LLM）
+  registerAiCollabRoutes(api, deps);
   app.route(API_PREFIX, api);
   // 仅当至少一个 header-injected Provider 已注册时才挂 ingress 中间件：
   // 该中间件会拦截"根路径 GET + 命中任一 Provider 的 ingressHeaderName"的请求
@@ -86,7 +90,14 @@ export function buildPanelApp(deps: PanelDeps): Hono {
   app.get('*', (c, next) => {
     const p = c.req.path;
     if (p.startsWith('/api/') || p === '/health') return next();
-    return serveStatic({ path: path.join(distDir, 'index.html') })(c, next);
+    // index.html 不缓存：serveStatic 会新建 Response 覆盖 c.header()，故这里直接读文件返回。
+    // 无协商头时浏览器启发式缓存会钉死旧 bundle（前端发版后用户看不到新版，2026-10-16 踩坑）；
+    // 带 hash 的 assets 由 vite 文件名自然失效，仍走上面的长缓存静态服务。
+    const html = readFileSync(path.join(distDir, 'index.html'), 'utf-8');
+    return c.body(html, 200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    });
   });
 
   return app;

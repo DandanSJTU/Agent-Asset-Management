@@ -31,10 +31,18 @@ export const WIKI_STATUS_KEY: Record<WikiDetail['status'], string> = {
   missing: 'wiki.status.missing',
 };
 
-export type WikiScopeTab = 'all' | 'team' | 'fixed' | 'scope';
+/**
+ * Wiki 页资产范围：
+ *   - team  团队 Wiki 池（visibility=team）
+ *   - mine  我的（团队空间内 visibility=private 且 owner=我的 wiki）
+ *   - fixed Agent 固定资产（入口已隐藏）
+ *   - all / scope 历史遗留档位，当前不渲染
+ */
+export type WikiScopeTab = 'all' | 'team' | 'mine' | 'fixed' | 'scope';
 export const SCOPE_LABEL_KEYS: Record<WikiScopeTab, string> = {
   all: 'wiki.scope.all',
   team: 'wiki.scope.team',
+  mine: 'wiki.scope.mine',
   fixed: 'wiki.scope.fixed',
   scope: 'wiki.scope.scope',
 };

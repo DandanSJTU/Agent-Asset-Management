@@ -1,0 +1,115 @@
+{
+  "role": "qa",
+  "displayName": "测试（QA / Evals 维护，0.5 人）",
+  "agentId": "agt-mock-qa",
+  "userId": "usr-mock-qa",
+  "teamId": "team-mockrec01",
+  "sessions": [
+    {
+      "sessionId": "mock://team-recsys/qa/2026-09-15-evals-baseline",
+      "title": "Evals 体系 · 评测集 v3 与通过线定义",
+      "startedAt": "2026-09-15T02:20:00.000Z",
+      "endedAt": "2026-09-15T04:50:00.000Z",
+      "recordCount": 92,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 88,
+          "scene_name": "团队在定义与维护首页信息流 Evals 集",
+          "content": "质量保障方式为 Evals-driven：Evals 由产品 + 工程 + 算法共同定义，QA 约 0.5 人工作量负责维护；AI 自动跑测试、捕获问题并建议修复，人做最终确认。团队共识是 Evals 等于 AI 的「单元测试」，速度快不等于质量差。"
+        },
+        {
+          "type": "work_artifact",
+          "priority": 84,
+          "scene_name": "团队在定义与维护首页信息流 Evals 集",
+          "content": "首页信息流 Evals 集已迭代到 v3，覆盖三类样本：低质内容样本（标题党 / 营销号高 CTR / 猎奇）、冷启样本（新用户 / 新内容 / 新城市）、行中场景样本（定位地与常居地不一致）。每类样本都有独立通过线。",
+          "metadata": { "artifact_type": "evals", "artifact_ref": "evals/homefeed-v3" }
+        },
+        {
+          "type": "work_method",
+          "priority": 90,
+          "scene_name": "团队在定义与维护首页信息流 Evals 集",
+          "content": "Evals-driven 工作流：先定义评测集与通过线，再让 AI 跑；任何策略 / 模型 / 配置变更必须回归全量 Evals，未通过不允许进入灰度。通过线写成可判定的数值条件，不接受主观判断。",
+          "metadata": { "scope": "team", "method_type": "sop" }
+        },
+        {
+          "type": "work_method",
+          "priority": 86,
+          "scene_name": "团队在定义与维护首页信息流 Evals 集",
+          "content": "报告口径守卫：所有测试与 Badcase 报告必须标注指标口径（pv/uv）、数据来源（大报表 / AB）、底表与实验号；口径缺失的报告视为无效，需重出。",
+          "metadata": { "scope": "team", "method_type": "constraint" }
+        }
+      ]
+    },
+    {
+      "sessionId": "mock://team-recsys/qa/2026-09-29-badcase-triage",
+      "title": "Badcase 归因 · 分层拆解与环节定位",
+      "startedAt": "2026-09-29T06:10:00.000Z",
+      "endedAt": "2026-09-29T08:40:00.000Z",
+      "recordCount": 118,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 85,
+          "scene_name": "团队在做首页信息流 Badcase 分层归因",
+          "content": "首页信息流评测主入口是 Badcase 分析平台：case 需归因到具体环节（召回 / 粗排 / 精排 / 重排 / 退场），并记录证据链（候选是否存在、分数、最终位置）。归因不到环节的 case 不允许关闭。"
+        },
+        {
+          "type": "work_method",
+          "priority": 88,
+          "scene_name": "团队在做首页信息流 Badcase 分层归因",
+          "content": "分层归因顺序：先分层（用户分层 HASORDER / NOORDER_HASINTENT / NOORDER_NOINTENT、新老用户、内容分层、位置 index、场景行前/行中、平台 T/C），再定环节，最后才给结论。禁止从现象直接跳到结论。",
+          "metadata": { "scope": "team", "method_type": "sop" }
+        },
+        {
+          "type": "work_fact",
+          "priority": 82,
+          "scene_name": "团队在做首页信息流 Badcase 分层归因",
+          "content": "视频内容准入是分发硬门槛：五维打分（5 大维度 + 16 子维度）评级 1+ 才可分发，level 1 = 一般 / 2 = 优质 / 3 = 精选；QA 侧把评级误判（如内模糊时长 >1/4 仍评为优质）作为高频 Badcase 类型单列。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 78,
+          "scene_name": "团队在做首页信息流 Badcase 分层归因",
+          "content": "DPP 多样性当前状态：离线代码完成、批量测试通过，但线上 F/G 版 uv 点击略负向，团队正在分析低 q 用户（精排分分桶 0-10 vs 10-100）的曝光结构影响；QA 已将其列为「未推全、需持续回归」项。"
+        }
+      ]
+    },
+    {
+      "sessionId": "mock://team-recsys/qa/2026-10-13-release-gate",
+      "title": "发布门禁 · 衰减打压阈值标定与端侧重排 Evals",
+      "startedAt": "2026-10-13T01:40:00.000Z",
+      "endedAt": "2026-10-13T04:20:00.000Z",
+      "recordCount": 101,
+      "memories": [
+        {
+          "type": "work_task",
+          "priority": 80,
+          "scene_name": "团队在补曝光衰减打压与端侧重排的 Evals 支撑",
+          "content": "曝光衰减打压的阈值标定需要 Evals 集支撑：需构建低质猎奇内容与营销号高 CTR 的标注样本集，并给出各窗口（7d/30d/180d/全生命周期）阈值下的误伤率基线。当前进行中，是打压方案能否拍板的前置条件。",
+          "metadata": { "owner": "usr-mock-qa", "deadline": "2026-11-10", "status": "in_progress" }
+        },
+        {
+          "type": "work_task",
+          "priority": 76,
+          "scene_name": "团队在补曝光衰减打压与端侧重排的 Evals 支撑",
+          "content": "端侧重排上线前需补端侧模型一致性 Evals（端侧实时特征与云端特征的一致性、端侧重排结果与云端重排结果的 diff 阈值），尚未排期，已登记为发布门禁阻塞项。",
+          "metadata": { "owner": "usr-mock-qa", "deadline": "未排期", "status": "pending" }
+        },
+        {
+          "type": "work_fact",
+          "priority": 75,
+          "scene_name": "团队在补曝光衰减打压与端侧重排的 Evals 支撑",
+          "content": "历史教训留档：宏观单品降权曾暂时下线，原因是产品侧认为 POI 数量不足、下线多为高星景点，算法侧主张内容优劣应由在线平滑点击率衡量而非受限于单品属性；该案例被列为「治理类策略需评估供给侧承受度」的典型案例。"
+        },
+        {
+          "type": "work_method",
+          "priority": 84,
+          "scene_name": "团队在补曝光衰减打压与端侧重排的 Evals 支撑",
+          "content": "发布门禁四项：Evals 全量回归通过、离线在线一致性通过、核心指标与护栏指标观察窗口达标、回滚路径已验证。任一项不通过则不放行；门禁不是签字仪式，是可判定的条件集合。",
+          "metadata": { "scope": "team", "method_type": "sop" }
+        }
+      ]
+    }
+  ]
+}

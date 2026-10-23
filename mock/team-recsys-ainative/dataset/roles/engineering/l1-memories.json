@@ -1,0 +1,121 @@
+{
+  "role": "engineering",
+  "displayName": "工程（Builder / Full-stack Eng）",
+  "agentId": "agt-mock-eng",
+  "userId": "usr-mock-eng",
+  "teamId": "team-mockrec01",
+  "sessions": [
+    {
+      "sessionId": "mock://team-recsys/engineering/2026-09-05-online-pipeline",
+      "title": "在线链路梳理 · 召回→粗排→精排→重排与退场横切",
+      "startedAt": "2026-09-05T01:00:00.000Z",
+      "endedAt": "2026-09-05T03:40:00.000Z",
+      "recordCount": 132,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 88,
+          "scene_name": "团队在梳理首页信息流在线链路与退场横切配置",
+          "content": "首页信息流在线链路为：多通道召回（候选千级）→ 粗排（截断百级）→ 精排（多目标大模型打分）→ 重排（打散 / 多样性 / decay）→ 展示；退场（drop weight）不是独立一环，而是横切在召回侧做候选截断、粗排侧融合打分、精排侧作为 show/click 特征。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 86,
+          "scene_name": "团队在梳理首页信息流在线链路与退场横切配置",
+          "content": "退场服务接口为 http://webapi.soa.ctripcorp.com/api/14979/getUserDropWeight，入参 {uid, scene}；scene 多窗口枚举包括 waterflow（默认）、waterflow_exp28（28天）、waterflow_expmax（max）、immersive_video_infoflow（沉浸式视频专有）；接入场景含行前信息流、沉浸式视频流、旅行风向标、IBU 信息流。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 82,
+          "scene_name": "团队在梳理首页信息流在线链路与退场横切配置",
+          "content": "退场工程规格：城市级队列 top100、单品级队列 top1000（后扩到 2000、再到 5000）按更新时间倒排；全局队列长度 5000、退场起始分 0.4、有效期取消（设 365 天）。配置链路为 eagleconf 配参 → 工程侧 DropOperator.java → 算法侧 UserDropWeightService.java。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 80,
+          "scene_name": "团队在梳理首页信息流在线链路与退场横切配置",
+          "content": "退场按类目差异化配置（起始分 / 有效时长 / 点击抬升）：城市 0.98 / 3 天 / Y，旅拍 0.1 / 7 天 / N，CTP 0.1 / 7 天 / N，景点酒店等其他 0.6 / 4 天 / Y；旅拍起始分还会按城市过去三个月新增内容数（上界 3000）在 0.1~0.4 间动态调整，查不到供给数则传 0。"
+        },
+        {
+          "type": "work_method",
+          "priority": 84,
+          "scene_name": "团队在梳理首页信息流在线链路与退场横切配置",
+          "content": "配置优先原则：所有阈值、队列长度、开关一律走 eagleconf，禁止硬编码进代码；每次变更需留痕（谁改、改了什么、回滚值），并能在分钟级回滚。",
+          "metadata": { "scope": "team", "method_type": "constraint" }
+        }
+      ]
+    },
+    {
+      "sessionId": "mock://team-recsys/engineering/2026-09-18-model-release",
+      "title": "模型上线流程 · 小时级发布与 GPU 训练迁移",
+      "startedAt": "2026-09-18T07:20:00.000Z",
+      "endedAt": "2026-09-18T09:50:00.000Z",
+      "recordCount": 98,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 85,
+          "scene_name": "团队在推进模型上线流程与训练平台迁移",
+          "content": "精排特征工程为 base_v9_4.yaml（elf-plugin-feeds），由 zeus 任务调度；dense 冷启锁定 seed=42，dense 网络参数量约 187.7 万，锁 seed 后两遍训练差异稳定。"
+        },
+        {
+          "type": "work_task",
+          "priority": 78,
+          "scene_name": "团队在推进模型上线流程与训练平台迁移",
+          "content": "训练平台迁移进行中：模型训练从异步改同步训练迁往 GPU 平台，同步框架调参未完成；该改动影响小时级模型上线流程，需在迁移完成后重跑一次全流程演练。",
+          "metadata": { "owner": "usr-mock-eng", "deadline": "2026-11-30", "status": "in_progress" }
+        },
+        {
+          "type": "work_task",
+          "priority": 76,
+          "scene_name": "团队在推进模型上线流程与训练平台迁移",
+          "content": "大模型相关工程配套：词表已导 redis（MOKA / BCE）与 cv（DONE），Fealib op 支持 redis 索引词表仍在进行中（DOING），是 LLM-emb 类特征上线的阻塞项。",
+          "metadata": { "owner": "usr-mock-eng", "deadline": "2026-10-31", "status": "in_progress" }
+        },
+        {
+          "type": "work_method",
+          "priority": 88,
+          "scene_name": "团队在推进模型上线流程与训练平台迁移",
+          "content": "AI 协同编码方式：AI 一次生成全栈代码（前端 + 后端 + 配置），人只做架构决策、任务拆分与最终 review；代码产出从「日手写 50-200 行」变为「日 review 3000+ 行」，关键路径（排序主链路、配置热更新）必须人工兜底。",
+          "metadata": { "scope": "team", "method_type": "sop" }
+        }
+      ]
+    },
+    {
+      "sessionId": "mock://team-recsys/engineering/2026-10-09-edgerank-and-triage",
+      "title": "端侧重排预研 · 重排打分公式缺口与线上问题初判",
+      "startedAt": "2026-10-09T02:00:00.000Z",
+      "endedAt": "2026-10-09T05:10:00.000Z",
+      "recordCount": 145,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 80,
+          "scene_name": "团队在预研端侧重排并补齐重排打分公式文档",
+          "content": "重排正在向端侧模型演进（2025-04-28 端侧模型与特征调研、2025-07-18 端侧数据格式规范、2025-07-24 端侧模型开发），含端侧实时特征；端侧重排尚未上线，需先补一致性 Evals。"
+        },
+        {
+          "type": "work_task",
+          "priority": 74,
+          "scene_name": "团队在预研端侧重排并补齐重排打分公式文档",
+          "content": "重排打分公式存在文档缺口：timeDecayWeight 与精排分（score.prem）的融合方式未完整还原，DPP kernel matrix 的融合公式与相关性/多样性权重取值也未文档化（源文档多为图片/notebook）。工程侧认领补配置与埋点说明。",
+          "metadata": { "owner": "usr-mock-eng", "deadline": "2026-11-20", "status": "in_progress" }
+        },
+        {
+          "type": "work_method",
+          "priority": 86,
+          "scene_name": "团队在预研端侧重排并补齐重排打分公式文档",
+          "content": "线上问题初判顺序：先确认影响面（哪些平台/场景/人群）→ 再看配置变更时间线（eagleconf 是否有同期变更）→ 再定位到漏斗环节（召回候选量 / 粗排截断 / 精排分分布 / 重排打散）→ 最后才是模型归因。未确认影响面前不先下结论。",
+          "metadata": { "scope": "team", "method_type": "sop" }
+        },
+        {
+          "type": "work_artifact",
+          "priority": 72,
+          "scene_name": "团队在预研端侧重排并补齐重排打分公式文档",
+          "content": "退场配置与队列规格快照已沉淀为工程 Wiki 台账（含各 scene 枚举、类目起始分/有效时长/点击抬升、队列长度演进 1000→2000→5000），作为配置变更的对照基线。",
+          "metadata": { "artifact_type": "doc", "artifact_ref": "wiki-mock-eng/退场机制配置台账" }
+        }
+      ]
+    }
+  ]
+}

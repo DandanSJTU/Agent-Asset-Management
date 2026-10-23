@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card, Copy, Input, Modal, Table, Text } from 'tea-component';
+import { CloseIcon } from 'tea-icons-react';
 import { MarkdownView } from '@/components/MarkdownView';
 import { tea } from '@/lib/tea-bridge';
 import {
@@ -122,6 +123,9 @@ export default function SkillDetailPane(props: {
    * 这样详情面板的编辑/文件/版本 UI 逻辑团队与个人库共用一套。
    */
   api?: SkillDetailApi;
+  /** 关闭详情回调。传入时在头部操作栏渲染 ✕ 按钮（「选中即展示」推挤式面板用）；
+   *  不传（团队页常驻分栏）则不渲染，行为不变。 */
+  onClose?: () => void;
 }) {
   const { t } = useTranslation();
   const api = props.api ?? teamSkillApi;
@@ -462,24 +466,40 @@ export default function SkillDetailPane(props: {
                 </Text>
               )}
             </div>
-            {currentView && (
+            {(currentView || props.onClose) && (
               <div className="_memory-skill-detail-actions">
-                {editable && !editingBody && (
-                  <Button type="primary" onClick={startEditBody}>
-                    {t('skills.detail.edit')}
+                {currentView && (
+                  <>
+                    {editable && !editingBody && (
+                      <Button type="primary" onClick={startEditBody}>
+                        {t('skills.detail.edit')}
+                      </Button>
+                    )}
+                    {editable && (
+                      <Button onClick={() => setShowNewFile(true)}>{t('skills.detail.addFile')}</Button>
+                    )}
+                    <Button
+                      onClick={() => {
+                        setShowVersions(true);
+                        if (versions === null) void loadVersions();
+                      }}
+                    >
+                      {t('skills.detail.versions')}
+                    </Button>
+                  </>
+                )}
+                {/* 「选中即展示」面板的关闭入口：Esc 之外的可见出口 */}
+                {props.onClose && (
+                  <Button
+                    type="text"
+                    className="_memory-skill-detail-close"
+                    aria-label={t('skills.detail.close')}
+                    title={t('skills.detail.close')}
+                    onClick={props.onClose}
+                  >
+                    <CloseIcon size={14} />
                   </Button>
                 )}
-                {editable && (
-                  <Button onClick={() => setShowNewFile(true)}>{t('skills.detail.addFile')}</Button>
-                )}
-                <Button
-                  onClick={() => {
-                    setShowVersions(true);
-                    if (versions === null) void loadVersions();
-                  }}
-                >
-                  {t('skills.detail.versions')}
-                </Button>
               </div>
             )}
           </div>

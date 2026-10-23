@@ -5,12 +5,10 @@
  */
 import { useTranslation } from 'react-i18next';
 import { Button, Segment, Select } from 'tea-component';
-import { tea } from '@/lib/tea-bridge';
 import { type ScopeTab } from '../constants/types';
 
 import { BlockDetail } from './BlockDetail';
 import { ImportBlockDialog } from './ImportBlockDialog';
-import { AllocateMemoryDialog } from './AllocateMemoryDialog';
 import { AssetPageHeader } from '@/components/asset/AssetPageHeader';
 import { AssetSplitLayout } from '@/components/asset/AssetSplitLayout';
 import {
@@ -34,7 +32,6 @@ export default function ChatMemoryPanel(
   const {
     // context
     activeTeam,
-    activeTeamId,
     currentUserId,
     ownedTeamAgents,
     scopeTabLabels,
@@ -53,16 +50,10 @@ export default function ChatMemoryPanel(
     rangeTooLarge,
     showImport,
     setShowImport,
-    showAllocate,
-    setShowAllocate,
     scopeTab,
     setScopeTab,
     agentFilter,
     setAgentFilter,
-    // demo
-    demoMode,
-    setDemoMode,
-    api,
     // computed
     selected,
     layerPage,
@@ -70,7 +61,6 @@ export default function ChatMemoryPanel(
     windowTotal,
     filtered,
     // handlers
-    fetchBlocks,
     handleLayerPageChange,
     handleL0LoadMore,
     handleLayerItemLoad,
@@ -82,7 +72,6 @@ export default function ChatMemoryPanel(
     handleToggleScope,
     // helpers
     agentLabel,
-    allocatableAgents,
     isSelfChatMemory,
   } = store;
 
@@ -96,14 +85,17 @@ export default function ChatMemoryPanel(
             : t('memory.subtitle.global', { count: blocks.length })
         }
         scope={
-          <Segment
-            value={scopeTab}
-            onChange={(v) => setScopeTab(v as ScopeTab)}
-            options={(['team'] as ScopeTab[]).map((tab) => ({
-              value: tab,
-              text: scopeTabLabels[tab],
-            }))}
-          />
+          // 「我的」= 团队空间内 owner=我（含已共享 + 仅我可见）；hover 提示区分于侧边栏个人空间。
+          <span title={t('memory.scope.mine.tooltip')}>
+            <Segment
+              value={scopeTab}
+              onChange={(v) => setScopeTab(v as ScopeTab)}
+              options={(['team', 'mine'] as ScopeTab[]).map((tab) => ({
+                value: tab,
+                text: scopeTabLabels[tab],
+              }))}
+            />
+          </span>
         }
         agent={
           scopeTab === 'fixed' ? (
@@ -122,43 +114,19 @@ export default function ChatMemoryPanel(
           ) : undefined
         }
         actions={
-          <>
-            <Button
-              type={demoMode ? 'weak' : 'primary'}
-              onClick={() => setDemoMode(!demoMode)}
-              tooltip={t('memory.demo.tooltip')}
-            >
-              {demoMode ? t('memory.demo.on') : t('memory.demo.off')}
-            </Button>
-            {(() => {
-              const isPrivateAndNotOwner =
-                !!selected &&
-                selected.scope === 'private' &&
-                selected.uploaded_by_user_id !== currentUserId;
-              const disabled = !selected || isPrivateAndNotOwner;
-              const tooltip = !selected
-                ? t('memory.allocate.disabled')
-                : isPrivateAndNotOwner
-                  ? t('memory.allocate.privateDisabled')
-                  : undefined;
-              return (
-                <Button onClick={() => setShowAllocate(true)} disabled={disabled} tooltip={tooltip}>
-                  {t('memory.allocateToAgent')}
-                </Button>
-              );
-            })()}
-            <Button
-              type="primary"
-              onClick={() => setShowImport(true)}
-              disabled={ownedTeamAgents.length === 0}
-              tooltip={
-                ownedTeamAgents.length === 0 ? t('memory.import.tooltip.noAgent') : undefined
-              }
-              data-guide="import-memory"
-            >
-              {t('memory.import')}
-            </Button>
-          </>
+          // 已移除「分配给 Agent」：对话记忆不再提供从本页直接装配到 Agent 的入口，
+          // 绑定关系统一在 Agent 编辑弹窗（AgentEditDialog）里维护。
+          <Button
+            type="primary"
+            onClick={() => setShowImport(true)}
+            disabled={ownedTeamAgents.length === 0}
+            tooltip={
+              ownedTeamAgents.length === 0 ? t('memory.import.tooltip.noAgent') : undefined
+            }
+            data-guide="import-memory"
+          >
+            {t('memory.import')}
+          </Button>
         }
       />
 
@@ -178,14 +146,19 @@ export default function ChatMemoryPanel(
                 b.scope === 'private' &&
                 b.uploaded_by_user_id !== currentUserId
               }
-              emptyText={t('memory.empty.filtered')}
+              emptyText={
+                scopeTab === 'mine' ? t('memory.empty.mine') : t('memory.empty.filtered')
+              }
               renderItem={(b) => {
                 const isRevoked =
                   scopeTab === 'fixed' &&
                   b.scope === 'private' &&
                   b.uploaded_by_user_id !== currentUserId;
                 const isOwner = b.uploaded_by_user_id === currentUserId;
-                const canToggleScope = scopeTab === 'fixed' && isOwner && !!b.scope;
+                // 共享/私密切换：固定资产 tab 与「我的」tab 都开放（后者是唯一出路 ——
+                // 私密资产要先转团队才能分配到 Agent）。团队 tab 下自己 owner 的条目
+                // 也开放，与「设为私密」语义对称。
+                const canToggleScope = scopeTab !== 'team' && isOwner && !!b.scope;
                 const canUnbind = scopeTab === 'fixed' && !isSelfChatMemory(b);
                 const l0Count = b.layer_counts?.L0_messages ?? 0;
                 return (
@@ -292,25 +265,6 @@ export default function ChatMemoryPanel(
           onImported={handleImport}
           agents={ownedTeamAgents.map((a) => ({ agent_id: a.agent_id, name: a.name }))}
           defaultAgentId={scopeTab === 'fixed' && agentFilter ? agentFilter : ''}
-        />
-      )}
-
-      {showAllocate && selected && (
-        <AllocateMemoryDialog
-          memoryTitle={selected.title}
-          agents={allocatableAgents(selected)}
-          memorySource="team"
-          onClose={() => setShowAllocate(false)}
-          onAllocated={async (agentId) => {
-            try {
-              await api.allocate(activeTeamId!, selected.id, agentId);
-              tea.notify.success(t('memory.notify.allocated'));
-              setShowAllocate(false);
-              fetchBlocks();
-            } catch (e: any) {
-              tea.notify.error(e?.message || t('memory.notify.allocateFailed'));
-            }
-          }}
         />
       )}
     </div>

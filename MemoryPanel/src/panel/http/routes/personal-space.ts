@@ -233,12 +233,17 @@ export function registerPersonalSpaceRoutes(api: Hono, deps: PanelDeps): void {
     if (!singleUserGuard(c, deps)) return;
     try {
       const id = String(c.req.query('id') ?? '');
+      const vendorQ = String(c.req.query('vendor') ?? '');
       const eng = await getEngine();
       const { facts } = eng.computeAllSessions(true);
-      const f = facts.find((x: Record<string, unknown>) => x.sessionId === id);
+      const f = facts.find(
+        (x: Record<string, unknown>) =>
+          x.sessionId === id && (!vendorQ || String(x.vendor ?? '') === vendorQ),
+      );
       if (!f) return c.json({ code: 404, message: 'NOT_FOUND', data: null }, 404);
       // 时间线按需单文件读（M1 DoD② 索引化：computeAllSessions 不再随全量扫描返回 records）
-      const sc = eng.scanOne('workbuddy', id);
+      // vendor 取自该 facts 条目本身（多 vendor：workbuddy / codex…），不能写死 workbuddy。
+      const sc = eng.scanOne(String(f.vendor ?? 'workbuddy'), id);
       const records = (sc?.raw?.records ?? []) as Record<string, unknown>[];
       const timeline = records
         .map((r) => ({
@@ -292,11 +297,15 @@ export function registerPersonalSpaceRoutes(api: Hono, deps: PanelDeps): void {
     try {
       const id = String(c.req.query('id') ?? '').trim();
       if (!id) return c.json({ code: 400, message: 'MISSING_SESSION_ID', data: null }, 400);
+      const vendorQ = String(c.req.query('vendor') ?? '');
       const eng = await getEngine();
       const { facts } = eng.computeAllSessions(true);
-      const f = facts.find((x: Record<string, unknown>) => x.sessionId === id);
+      const f = facts.find(
+        (x: Record<string, unknown>) =>
+          x.sessionId === id && (!vendorQ || String(x.vendor ?? '') === vendorQ),
+      );
       if (!f) return c.json({ code: 404, message: 'NOT_FOUND', data: null }, 404);
-      const sc = eng.scanOne('workbuddy', id);
+      const sc = eng.scanOne(String(f.vendor ?? 'workbuddy'), id);
       const raw = (sc?.raw?.records ?? []) as Record<string, unknown>[];
 
       const ROLE_MAP: Record<string, string> = {

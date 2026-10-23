@@ -335,16 +335,19 @@ function collectRealpathsFromRoot(root: string): Set<string> {
           continue;
         }
         if (tst.isDirectory()) {
-          walk(target, visited);
+          // 递归走「逻辑软链路径」而非真实目标路径：这样 skill 子文件会沿用
+          // ~/.workbuddy/skills/<name>/... 的逻辑路径，最终上报的 skill 路径也落在
+          // root 之下（见 readLocalAgentSkillContent 的 PATH_NOT_ALLOWED 校验）。
+          walk(full, visited);
         } else if (tst.isFile() && entry === 'SKILL.md') {
-          found.add(rp); // SKILL.md 位于软链目录本身
+          found.add(dir); // SKILL.md 位于软链目录本身
         }
         continue;
       }
       if (st.isDirectory()) {
         walk(full, visited);
       } else if (st.isFile() && entry === 'SKILL.md') {
-        found.add(rp);
+        found.add(dir);
       }
     }
   };
@@ -375,21 +378,29 @@ export function scanLocalAgentSkills(opts?: { cwd?: string }): LocalAgentSkillsR
       const exists = existsSync(r) && statSync(r).isDirectory();
       let count = 0;
       if (exists) {
-        const realpaths = collectRealpathsFromRoot(r);
-        for (const rp of realpaths) {
+        const logicalPaths = collectRealpathsFromRoot(r);
+        for (const logical of logicalPaths) {
           count++;
+          // 去重仍以物理真实路径为准（同一份 skill 经多个 root / 软链被多次遍历时只保留一条）；
+          // 但「上报路径」用逻辑路径（落在 root 之下），便于读取侧按 root 前缀放行软链目标。
+          let rp: string;
+          try {
+            rp = realpathSync(logical);
+          } catch {
+            rp = logical;
+          }
           let entry = byRealpath.get(rp);
           if (!entry) {
-            const skillMd = join(rp, 'SKILL.md');
+            const skillMd = join(logical, 'SKILL.md');
             const text = readIfExists(skillMd);
             const fm = text != null ? parseFrontmatter(text) : { name: null, description: '', triggers: [] };
-            const stats = statDir(rp);
+            const stats = statDir(logical);
             entry = {
-              name: fm.name || basename(rp),
+              name: fm.name || basename(logical),
               agents: [],
               description: fm.description,
               triggers: fm.triggers,
-              path: rp,
+              path: logical,
               skillMdPath: skillMd,
               updatedAtMs: stats.mtimeMs,
               sizeBytes: stats.size,
@@ -434,4 +445,172 @@ export function scanLocalAgentSkills(opts?: { cwd?: string }): LocalAgentSkillsR
     skills,
     totalCount: skills.length,
   };
+}
+
+// ========================= 读取单个本地 skill 内容（「从本地导入」落库用） =========================
+
+/** 单个资源文件的导入形态（与前端 SkillResourcePayload 对应）。 */
+export interface LocalAgentSkillResource {
+  /** 相对 skill 目录的资源路径（如 scripts/run.sh、references/x.md） */
+  path: string;
+  content: string;
+  encoding: 'utf-8' | 'base64';
+  mime_type: string;
+  is_executable: boolean;
+}
+
+export interface LocalAgentSkillContent {
+  /** SKILL.md 全文 */
+  content: string;
+  resources: LocalAgentSkillResource[];
+}
+
+/** 单文件内容读取上限（字节）；超过则跳过该资源，避免把超大二进制灌入 skill 落库 */
+const MAX_RESOURCE_BYTES = 4 * 1024 * 1024;
+/** 资源文件总数上限 */
+const MAX_RESOURCES = 300;
+
+function mimeForExt(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.md') || lower.endsWith('.markdown')) return 'text/markdown';
+  if (lower.endsWith('.txt')) return 'text/plain';
+  if (lower.endsWith('.json')) return 'application/json';
+  if (lower.endsWith('.yaml') || lower.endsWith('.yml')) return 'application/yaml';
+  if (lower.endsWith('.sh') || lower.endsWith('.bash')) return 'text/x-shellscript';
+  if (lower.endsWith('.py')) return 'text/x-python';
+  if (lower.endsWith('.js') || lower.endsWith('.ts') || lower.endsWith('.tsx') || lower.endsWith('.jsx')) return 'text/javascript';
+  if (lower.endsWith('.go') || lower.endsWith('.rs')) return 'text/plain';
+  if (lower.endsWith('.html') || lower.endsWith('.htm') || lower.endsWith('.css')) return 'text/plain';
+  if (lower.endsWith('.csv') || lower.endsWith('.conf') || lower.endsWith('.cfg') || lower.endsWith('.toml') || lower.endsWith('.xml')) return 'text/plain';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.svg')) return 'image/svg+xml';
+  if (lower.endsWith('.gif')) return 'image/gif';
+  return 'application/octet-stream';
+}
+
+function looksLikeText(name: string, size: number): boolean {
+  const lower = name.toLowerCase();
+  if (/\.(md|markdown|txt|json|yaml|yml|sh|bash|js|ts|tsx|jsx|py|go|rs|toml|html|htm|css|csv|conf|cfg|xml|lock)$/.test(lower)) return true;
+  if (size < 64 * 1024) return true;
+  return false;
+}
+
+/** 收集某 skill 目录下所有文件（相对路径 → 绝对路径），排除 .git/node_modules/隐藏目录 */
+function collectSkillFiles(dir: string, visited: Set<string>): Array<{ rel: string; abs: string }> {
+  const out: Array<{ rel: string; abs: string }> = [];
+  let rp: string;
+  try {
+    rp = realpathSync(dir);
+  } catch {
+    return out;
+  }
+  if (visited.has(rp)) return out;
+  visited.add(rp);
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    if (entry === 'node_modules' || entry === '.git' || entry.startsWith('.')) continue;
+    const full = join(dir, entry);
+    let st;
+    try {
+      st = statSync(full);
+    } catch {
+      continue;
+    }
+    if (st.isDirectory()) {
+      const sub = collectSkillFiles(full, visited);
+      for (const f of sub) out.push({ rel: entry + '/' + f.rel, abs: f.abs });
+    } else if (st.isFile()) {
+      out.push({ rel: entry, abs: full });
+    }
+  }
+  return out;
+}
+
+/**
+ * 读取某个本地 skill 物理目录的完整内容，供「从本地导入」直接落库。
+ *
+ * 安全约束：path 必须是已知 agent root（含 cwd 仓库级 root）的直接/间接子目录，
+ * 否则抛 `PATH_NOT_ALLOWED`（防目录遍历读取任意文件）。读取单文件超过
+ * MAX_RESOURCE_BYTES 的资源会被跳过，避免把巨型二进制灌入 skill。
+ */
+export function readLocalAgentSkillContent(path: string, cwd?: string): LocalAgentSkillContent {
+  const home = homedir();
+  const baseCwd = cwd?.trim() ? resolve(cwd) : process.cwd();
+  const allowedRoots = new Set<string>();
+  for (const agent of AGENTS) {
+    for (const r of rootsForAgent(agent, home, baseCwd)) {
+      // 同时收录「原始字符串」与「解析后的真实路径」两种形态：扫描器上报的 skill 路径可能是
+      // 软链的逻辑路径（如 ~/.workbuddy/skills/x → 工作区真实目录），仅用真实路径校验会误判
+      // PATH_NOT_ALLOWED，需允许逻辑路径命中原始 root 前缀。
+      allowedRoots.add(r);
+      try {
+        if (existsSync(r) && statSync(r).isDirectory()) allowedRoots.add(realpathSync(r));
+      } catch {
+        /* 不存在或不可读则忽略 */
+      }
+    }
+  }
+  const rawPath = path;
+  let targetRp: string;
+  try {
+    targetRp = realpathSync(path);
+  } catch {
+    targetRp = resolve(path);
+  }
+  // 逻辑路径命中原始 root（软链场景）或真实路径命中真实 root（普通场景）均放行。
+  const isUnder = [...allowedRoots].some(
+    (root) =>
+      rawPath === root ||
+      rawPath.startsWith(root + '/') ||
+      targetRp === root ||
+      targetRp.startsWith(root + '/'),
+  );
+  if (!isUnder) {
+    throw new Error('PATH_NOT_ALLOWED');
+  }
+
+  const files = collectSkillFiles(targetRp, new Set());
+  let content = '';
+  const resources: LocalAgentSkillResource[] = [];
+  const skillMd = files.find((f) => f.rel === 'SKILL.md');
+  if (skillMd) {
+    try {
+      content = readFileSync(skillMd.abs, 'utf-8');
+    } catch {
+      content = '';
+    }
+  }
+  for (const f of files) {
+    if (f.rel === 'SKILL.md') continue;
+    if (resources.length >= MAX_RESOURCES) break;
+    let buf: Buffer;
+    try {
+      buf = readFileSync(f.abs);
+    } catch {
+      continue;
+    }
+    if (buf.length > MAX_RESOURCE_BYTES) continue;
+    const isText = looksLikeText(f.rel, buf.length);
+    let isExec = false;
+    try {
+      // eslint-disable-next-line no-bitwise
+      isExec = Boolean(lstatSync(f.abs).mode & 0o111);
+    } catch {
+      isExec = false;
+    }
+    resources.push({
+      path: f.rel,
+      content: isText ? buf.toString('utf-8') : buf.toString('base64'),
+      encoding: isText ? 'utf-8' : 'base64',
+      mime_type: mimeForExt(f.rel),
+      is_executable: isExec,
+    });
+  }
+  return { content, resources };
 }

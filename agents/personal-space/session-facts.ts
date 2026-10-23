@@ -3,8 +3,9 @@
  *
  * 设计要点（对齐 personal-space-plan.html 阶段 0）：
  *   - readRawRecords 已并入 agents/asset-import.ts，这里直接复用，不重复扫盘。
- *   - 本期只注册 workbuddy 一个 vendor（本机占 98.7% 数据量，其余 vendor 样本不足，
- *     盲写无法验证）。注册表保留扩展位，将来有样本时按同样的体检流程接入即可。
+ *   - 注册表当前含 workbuddy（本机占 98.7% 数据量）与 codex（ChatGPT Work / Codex
+ *     本地 rollout，~/.codex/sessions）。其余 vendor 样本不足时按同样的体检流程接入即可，
+ *     扩展位保留（见方案 P2 / P9）。
  *   - 子代理归因：优先用行内 parentId（覆盖率极高），并辅以「路径即父子」的确定性兜底，
  *     不学 coslash 让 ParentIDFromPath 恒返回 "" 把嵌套会话渲染成孤儿。
  */
@@ -19,6 +20,8 @@ import {
   stripHarnessWrappers,
   sanitizeFirstPromptForDisplay,
 } from '../../MemoryProxy/src/common/session-harness.ts';
+// 非 workbuddy vendor 的会话抽取器（ChatGPT Work / Codex 等）。
+import { makeCodexExtractor, normalizeCodexRecords } from './codex-extractor.ts';
 
 export type SessionKind = 'top-level' | 'nested';
 
@@ -200,8 +203,12 @@ function buildSession(
   raw: RawRecordFile,
   topLevelKeys: Set<string>,
   parentRaw?: RawRecordFile,
+  meta?: { vendor?: string; kind?: SessionKind; sessionId?: string; parentId?: string },
 ): ExtractedSession {
-  const kind: SessionKind = f.depth === 1 ? 'top-level' : 'nested';
+  // 非 workbuddy vendor：kind / sessionId / vendor 由 SessionMeta 给定（其 sessionId 不含
+  // `<slug>/<uuid>` 目录层级，depth 推导会误判为 nested），workbuddy 沿用原有路径推导。
+  const vendor = meta?.vendor ?? 'workbuddy';
+  const kind: SessionKind = meta?.kind ?? (f.depth === 1 ? 'top-level' : 'nested');
   let firstPrompt = '';
   let rawFirstUser = '';
   let title = '';
@@ -226,8 +233,8 @@ function buildSession(
     ts.push(...extractTimestamps(rec));
   }
   ts.sort((a, b) => a - b);
-  const sessionId = f.rel.replace(/\.jsonl$/, '');
-  const parentId = computeParentId(f, topLevelKeys);
+  const sessionId = meta?.sessionId ?? f.rel.replace(/\.jsonl$/, '');
+  const parentId = meta ? meta.parentId : computeParentId(f, topLevelKeys);
   // B 方案：嵌套会话优先用父会话 Agent 调用 description 作为标题（对齐 coslash subagents.go）
   let spawnTask = '';
   if (kind === 'nested' && parentId && parentRaw) {
@@ -235,7 +242,7 @@ function buildSession(
   }
   return {
     sessionId,
-    vendor: 'workbuddy',
+    vendor,
     kind,
     path: f.full,
     parentId,
@@ -278,14 +285,28 @@ export function makeWorkbuddyExtractor(): SessionExtractor {
   };
 }
 
-/** vendor 注册表：本期只注册 workbuddy，保留多 vendor 扩展位（见方案 P2 / P9） */
+/** vendor 注册表：workbuddy（本机主数据源）+ codex（ChatGPT Work / Codex 本地 rollout），保留多 vendor 扩展位（见方案 P2 / P9） */
 export const EXTRACTOR_REGISTRY: Record<string, () => SessionExtractor> = {
   workbuddy: makeWorkbuddyExtractor,
+  codex: makeCodexExtractor,
 };
+
+/**
+ * 会话洞察「全量集合」默认扫描的 vendor 列表（面板列表 / Agent facet 的数据面）。
+ * 只有本机真实存在数据源的 vendor 才列入，避免下拉出现永远 0 条的选项。
+ * 新增 vendor：在此追加 + EXTRACTOR_REGISTRY 注册 + normalizeVendorRecords 归一。
+ */
+export const ENABLED_VENDORS: string[] = ['workbuddy', 'codex'];
 
 export function getExtractor(vendor: string): SessionExtractor | undefined {
   const factory = EXTRACTOR_REGISTRY[vendor];
   return factory ? factory() : undefined;
+}
+
+/** 按 vendor 路由原始记录归一：codex 需把 envelope 归一成 workbuddy 形态；其余 vendor 原样返回。 */
+function normalizeVendorRecords(vendor: string, raw: RawRecordFile): RawRecordFile {
+  if (vendor === 'codex') return normalizeCodexRecords(raw);
+  return raw;
 }
 
 /**
@@ -303,8 +324,12 @@ export function scanSessions(vendor = 'workbuddy'): ScannedSession[] {
   if (vendor !== 'workbuddy') {
     const extractor = getExtractor(vendor);
     if (!extractor) return [];
-    // 未来多 vendor：先 discover 摘要，再补读原始记录（该 vendor 样本极少，性能可忽略）
-    return extractor.discover().map((session) => ({ session, raw: readRawRecords(session.path) }));
+    // 非 workbuddy vendor：先 discover 摘要，再补读原始记录并按 vendor 归一（该 vendor 样本极少，性能可忽略）。
+    // codex 的 envelope 需归一成 {role,content,timestamp} 形态才能被「我的记忆」提炼消费。
+    return extractor.discover().map((session) => ({
+      session,
+      raw: normalizeVendorRecords(vendor, readRawRecords(session.path)),
+    }));
   }
   const scanned = scanWorkbuddyRaw();
   const topLevelKeys = new Set(
@@ -386,14 +411,21 @@ export function discoverSessionMeta(vendor = 'workbuddy'): SessionMeta[] {
 export function readOneSession(meta: SessionMeta, topLevelKeys: Set<string>): ScannedSession {
   const rel = `${meta.sessionId}.jsonl`;
   const depth = meta.sessionId.split('/').length - 1;
-  const raw = readRawRecords(meta.path);
-  // B 方案：单会话读取也回溯父会话 raw，保证嵌套会话 spawnTask 命中（时间线 / Inspector 路径）
+  const raw = normalizeVendorRecords(meta.vendor, readRawRecords(meta.path));
+  // B 方案：单会话读取也回溯父会话 raw，保证嵌套会话 spawnTask 命中（时间线 / Inspector 路径）。
+  // 父会话回溯仅 workbuddy 适用（其父会话是同根下另一条转录）；codex 的父子由 session_meta 跨文件给出。
   let parentRaw: RawRecordFile | undefined;
-  if (meta.parentId) {
+  if (meta.parentId && meta.vendor === 'workbuddy') {
     const parentPath = join(homedir(), '.workbuddy', 'projects', `${meta.parentId}.jsonl`);
     if (existsSync(parentPath)) parentRaw = readRawRecords(parentPath);
   }
-  return { session: buildSession({ full: meta.path, rel, depth }, raw, topLevelKeys, parentRaw), raw };
+  const session = buildSession({ full: meta.path, rel, depth }, raw, topLevelKeys, parentRaw, {
+    vendor: meta.vendor,
+    kind: meta.kind,
+    sessionId: meta.sessionId,
+    parentId: meta.parentId,
+  });
+  return { session, raw };
 }
 
 /** 单会话扫描（发现 + 读取）；时间线 / Inspector 按 id 取原始记录时使用，避免全量读盘 */

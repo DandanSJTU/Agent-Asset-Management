@@ -35,11 +35,13 @@ import {
   AssetListPanel,
   AssetItemHeader,
   AssetItemName,
-  AssetItemId,
+  AssetItemDesc,
   AssetItemBadges,
+  AssetItemPath,
   AssetItemTime,
 } from '@/components/asset/AssetListPanel';
 import { UserBadge } from '@/components/asset/UserBadge';
+import { formatAssetTime, formatAssetTimeFull } from '@/utils/time';
 import SkillDetailPane from './SkillDetailPane';
 import ImportSkillDialog from './ImportSkillDialog';
 import ForkSkillDialog from './ForkSkillDialog';
@@ -100,16 +102,18 @@ export default function SkillsPanel({
             : t('skills.subtitle.global', { count: skills.length })
         }
         scope={
-          // 按需求隐藏「Agent 资产」tab；保留 Segment 组件以便日后恢复，
-          // 当前只渲染「团队资产」一个选项。
-          <Segment
-            value={tab}
-            onChange={(v) => setTab(v as Tab)}
-            options={(['team'] as Tab[]).map((t2) => ({
-              value: t2,
-              text: t(TAB_I18N_KEY[t2]),
-            }))}
-          />
+          // 两档：「团队资产」= visibility=team；「我的」= 团队空间内 private 且 owner=我。
+          // 「Agent 资产」(fixed) 仍隐藏，恢复时在数组里加回 'fixed' 即可。
+          <span title={t('skills.scope.mine.tooltip')}>
+            <Segment
+              value={tab}
+              onChange={(v) => setTab(v as Tab)}
+              options={(['team', 'mine'] as Tab[]).map((t2) => ({
+                value: t2,
+                text: t(TAB_I18N_KEY[t2]),
+              }))}
+            />
+          </span>
         }
         agent={
           tab === 'fixed' ? (
@@ -133,18 +137,26 @@ export default function SkillsPanel({
         actions={
           <>
             {(() => {
-              const canFork = tab === 'team' && !!selectedSkillId;
+              // Fork 产物要归属到具体 agent：私密档下先共享到团队再 Fork。
+              // 「我的」档里已共享（visibility=team）的条目同样开放，
+              // 与「团队」档行为对齐，省得用户来回切 tab。
+              const selectedVis = selectedSkillId ? visibilityMap[selectedSkillId] : undefined;
+              const forkOpen =
+                tab === 'team' || (tab === 'mine' && selectedVis === 'team');
+              const canFork = forkOpen && !!selectedSkillId;
               const tooltip =
                 tab === 'fixed'
                   ? t('skills.fork.tooltip.fixed')
                   : !selectedSkillId
                     ? t('skills.fork.tooltip.team.empty')
-                    : undefined;
-              return tab === 'fixed' ? null : (
+                    : tab === 'mine' && selectedVis !== 'team'
+                      ? t('skills.fork.tooltip.private')
+                      : undefined;
+              return forkOpen ? (
                 <Button onClick={() => setShowFork(true)} disabled={!canFork} tooltip={tooltip}>
                   {t('skills.fork')}
                 </Button>
-              );
+              ) : null;
             })()}
             {(() => {
               const canExport = !!selectedSkillId;
@@ -176,6 +188,9 @@ export default function SkillsPanel({
       {/* === 团队资产 / 固定资产 Tab === */}
       <AssetSplitLayout
         storageKey="skills:assetSplitWidth"
+        // 与「我的技能」一致：列表项为四列（名称/描述/最近修改/本地位置），
+        // 默认 280px 会把位置与时间挤成两行。仅在无本地拖拽记录时生效。
+        defaultWidth={360}
         sidebar={
           <AssetListPanel
             title={
@@ -200,7 +215,9 @@ export default function SkillsPanel({
                 ? t('skills.empty.fixed.noAgent')
                 : tab === 'fixed'
                   ? t('skills.empty.fixed.hasAgent', { agent: selectedAgent })
-                  : t('skills.empty.team')
+                  : tab === 'mine'
+                    ? t('skills.empty.mine')
+                    : t('skills.empty.team')
             }
             renderItem={(s) => {
               const ownerIsMe = !!myUserId && s.owner_user_id === myUserId;
@@ -221,7 +238,7 @@ export default function SkillsPanel({
                         </Tag>
                       </Tooltip>
                     )}
-                    <AssetItemName title={s.name}>{s.name}</AssetItemName>
+                    <AssetItemName title={`${s.name}\n${s.skill_id}`}>{s.name}</AssetItemName>
                     {canManage && (
                       <Button
                         type="text"
@@ -246,10 +263,30 @@ export default function SkillsPanel({
                     )}
                   </AssetItemHeader>
 
-                  {/* 第 2 行：资产真实 id，等宽灰色（与 ChatMemory 页同构） */}
-                  <AssetItemId>{s.skill_id}</AssetItemId>
+                  {/* 第 2 行：描述（2 行截断）。
+                      原先这一行展示的是 skill_id（等宽灰色），现按产品要求把列表
+                      字段收敛为「名称 / 描述 / 最近修改 / 本地位置」四列，
+                      skill_id 退到名称的 title（悬浮可见），不再单独占行。 */}
+                  {s.description.trim() ? (
+                    <AssetItemDesc>{s.description}</AssetItemDesc>
+                  ) : (
+                    <AssetItemDesc>
+                      <span className="_alp-item-desc-empty">{t('skills.item.noDescription')}</span>
+                    </AssetItemDesc>
+                  )}
 
                   <AssetItemBadges>
+                    {/* 本地位置：只有 skill 数据面来源才有该字段（fixed tab 走
+                        listSkills）。team tab 数据源是 asset 派生，无 storage_dir，
+                        此时整项不渲染，避免留一个空的「位置」标签。 */}
+                    {s.storage_dir && (
+                      <AssetItemPath
+                        label={t('skills.item.location')}
+                        title={t('skills.item.location.title', { path: s.storage_dir })}
+                      >
+                        {s.storage_dir}
+                      </AssetItemPath>
+                    )}
                     {s.owner_user_id && (
                       <UserBadge
                         userId={s.owner_user_id}
@@ -260,14 +297,20 @@ export default function SkillsPanel({
                         }
                       />
                     )}
-                    <AssetItemTime>{new Date(s.updated_at_ms).toLocaleString()}</AssetItemTime>
+                    <AssetItemTime
+                      title={t('skills.item.updatedAt.title', {
+                        time: formatAssetTimeFull(s.updated_at_ms),
+                      })}
+                    >
+                      {formatAssetTime(s.updated_at_ms)}
+                    </AssetItemTime>
                   </AssetItemBadges>
 
                   {/* 共享/私密切换：原「个人资产」tab 的能力，迁到「Agent 资产」tab，
                       仅 owner 可切；owner 视角 getAssets 已关闭 visibility 过滤，
                       private skill 也能拿到 vis。即便 vis 偶发缺失也按 private 兜底渲染，
                       避免 skill 被切成 private 后切换按钮消失、无法再切回 team。 */}
-                  {tab === 'fixed' && ownerIsMe && (
+                  {(tab === 'fixed' || tab === 'mine') && ownerIsMe && (
                     <div style={{ marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
                       <Segment
                         value={vis === 'team' ? 'team' : 'private'}

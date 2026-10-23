@@ -28,6 +28,13 @@
  *      提示用户预计出结果时间后关闭弹窗，不在前端阻塞轮询 —— 结果会异步
  *      沉淀到该 agent 的 skill 列表，用户后续手动刷新即可看到）。
  *
+ *   4. 从对话洞察导入（insight）
+ *      只在个人技能库（「我的技能」）开放，与目录导入并列的 tab。
+ *      内容体是 InsightImportPanel：用户从「对话洞察」里选一个真实会话，
+ *      前端读会话消息后交给 personal-skills/extract，服务端 LLM 归纳出
+ *      skill 并落个人命名空间（team_id='personal'）。提交入口复用本弹窗
+ *      Footer —— 面板通过 ref.submit() 触发，并把就绪/提交态回传上来。
+ *
  * 移除说明：原有的「粘贴 SKILL.md 文本」模式已下线 —— 目录导入已覆盖
  * 该场景，且用户手写 frontmatter 极易踩坑（name/description 缺失、
  * YAML 语法错），改由目录导入引导用户放好 SKILL.md 更稳。
@@ -46,13 +53,74 @@ import {
   type ExtractParams,
   type SkillSummary,
 } from '@/lib/api/skill-api';
+import {
+  listLocalAgentSkills,
+  getLocalAgentSkillContent,
+  type LocalAgentSkill,
+} from '@/lib/api/local-agent-skills';
+import { ApiError } from '@/lib/api/base';
 import { assetsApi } from '@/lib/teamApi';
 import { Alert, Button, Checkbox, Form, Input, Modal, Segment, Select } from 'tea-component';
 import { FolderOpenIcon } from 'tea-icons-react';
 import i18n from '@/i18n';
+import InsightImportPanel, { type InsightImportPanelHandle } from './InsightImportPanel';
 import '../styles/import-skill-dialog.css';
 
-type Mode = 'directory' | 'session' | 'personal';
+type Mode = 'local' | 'directory' | 'session' | 'personal' | 'insight';
+
+/**
+ * 技能名合法性：MemoryCore 强制 ^[a-z0-9][a-z0-9-]*$（小写字母/数字/连字符）。
+ * 本地 skill 目录名可能含中文/大写（如「策略产品-韩瞳-perspective」），直接导入会被
+ * 内核以 SKILL_FRONTMATTER_INVALID 拒绝。前端预先过滤并在 UI 置灰，避免批量导入时
+ * 出现「失败」假象 —— 这些技能并非导入失败，而是命名不合法、需要先改名。
+ */
+const SKILL_NAME_RE = /^[a-z0-9][a-z0-9-]*$/;
+
+/**
+ * 判定是否为可重试的瞬时错误：网络层 fetch 失败 / 5xx（面板代理偶发 fetch failed → 502）。
+ *
+ * 注意：面板把内核「业务错误」也映射成 HTTP 502，但响应体里带业务 code
+ * （42201 重名 / 42203 内容校验失败 / 40001 参数非法 …）。这类是确定性失败，
+ * 重试只会浪费 2 次请求并延迟报错 —— 直接判定不可重试，把真实原因透出。
+ *
+ * ApiError（base.ts）与 SkillApiError（skill-api.ts）都带 `code` 字段，但后者
+ * 只 extends Error（不是 ApiError 的子类），所以这里改为按「结构」取 code/status，
+ * 两者统一处理，避免 SkillApiError 漏判成瞬时错误而白重试 3 次。
+ */
+function isTransientApiError(err: unknown): boolean {
+  if (err && typeof err === 'object') {
+    const e = err as { code?: unknown; status?: unknown };
+    // 确定性业务错误（42201 重名 / 42203 内容校验 / 40001 参数非法 …）：不重试。
+    if (typeof e.code === 'number' && e.code >= 40000) return false;
+    const status = typeof e.status === 'number' ? e.status : 0;
+    // 纯网络层（fetch 失败 status=0）或服务端瞬时故障（5xx）：可重试自愈。
+    if (status === 0 || status >= 500) return true;
+  }
+  // 未分类（fetch abort / 非 ApiError 的未分类网络异常）= 瞬时，允许重试。
+  return true;
+}
+
+/**
+ * 带退避重试：仅对瞬时错误重试，确定性业务错误（如 42203 非法 frontmatter）立即抛出。
+ * 面板→内核链路在批量导入时偶发 502（fetch failed，疑似 keep-alive 长连接偶发
+ * 失效），重试即可自愈，避免误报「全部失败」。
+ */
+async function withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      if (attempt < retries && isTransientApiError(e)) {
+        await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
 
 /** 拉取个人技能库列表的上限（与 MySkillsPage 一致）。 */
 const PERSONAL_LIST_LIMIT = 200;
@@ -157,13 +225,18 @@ export default function ImportSkillDialog(props: {
   userId: string;
   /**
    * 注入的 skill 数据面 API（createSkill 必填；extractSkills 仅在对话导入时需要）。
-   * 默认 = 团队 skill API。个人技能库传 personal 版本 + allowedModes=['directory']。
+   * 默认 = 团队 skill API。个人技能库传 personal 版本 + allowedModes=['directory', 'insight']。
    */
   api?: { createSkill: typeof createSkill; extractSkills?: typeof extractSkills };
-  /** 允许的导入方式；默认 directory + session。个人库只开放 directory。 */
+  /**
+   * 允许的导入方式；默认 directory + session + personal。
+   * 个人库（「我的技能」）传 ['local', 'directory', 'insight']：本地导入 + 目录导入 + 从对话洞察导入。
+   * 首个 allowed mode 即弹窗默认激活的 tab。
+   */
   allowedModes?: Mode[];
 }) {
-  const [mode, setMode] = useState<Mode>('directory');
+  // 默认激活第一个允许的导入方式（「我的技能」= 本地导入，团队 = 目录导入）。
+  const [mode, setMode] = useState<Mode>(props.allowedModes?.[0] ?? 'directory');
   const [pickedFiles, setPickedFiles] = useState<File[]>([]);
   // session-import：用户粘贴 skill/extract 接口入参（含 messages 数组）。
   // 服务端 LLM 从 messages 自行归纳 skill 的 name / description / content。
@@ -172,6 +245,11 @@ export default function ImportSkillDialog(props: {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(props.agentId ?? '');
+  // ==== insight mode（从对话洞察导入）状态：由 InsightImportPanel 回传，驱动 Footer ====
+  const insightPanelRef = useRef<InsightImportPanelHandle>(null);
+  /** 面板内是否已选中一个含消息的会话（决定 Footer 主按钮可点性） */
+  const [insightReady, setInsightReady] = useState(false);
+  const [insightSubmitting, setInsightSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
   const skillApi = props.api ?? { createSkill, extractSkills };
@@ -192,6 +270,51 @@ export default function ImportSkillDialog(props: {
   // 切到 personal mode 时拉取个人技能库列表（Panel 服务端注入身份，只能看到本人技能）。
   // personalLoadedRef 防止空库 / 切 tab 时反复请求。
   const personalLoadedRef = useRef(false);
+
+  // ==== local mode（从本地导入）状态：自动遍历本机各 agent 的本地 skill 目录 ====
+  const [localSkills, setLocalSkills] = useState<LocalAgentSkill[]>([]);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [selectedLocalPaths, setSelectedLocalPaths] = useState<Set<string>>(new Set());
+  /** 重名预检：个人库（local 导入目标）已存在的 skill name 集合（方案 A 置灰禁用） */
+  const [localDuplicateNames, setLocalDuplicateNames] = useState<Set<string>>(new Set());
+  const localLoadedRef = useRef(false);
+
+  /** 命名非法预检：本地 skill 目录名不符合 ^[a-z0-9][a-z0-9-]*$ 的（中文/大写等），内核会拒绝，前端置灰。 */
+  const localInvalidNames = useMemo(
+    () => new Set(localSkills.filter((s) => !SKILL_NAME_RE.test(s.name)).map((s) => s.name)),
+    [localSkills],
+  );
+
+  const loadLocalSkills = useCallback(async () => {
+    setLocalLoading(true);
+    setLocalError(null);
+    try {
+      const res = await listLocalAgentSkills();
+      setLocalSkills(res.skills);
+      localLoadedRef.current = true;
+      // 拉个人库已有 name 做重复置灰（local 导入目标是 personal 库）。
+      // 预检失败不阻塞导入：submit 时后端唯一约束（42201）仍会兜底拦截。
+      try {
+        const existing = await personalListSkills({ pagination: { limit: PERSONAL_LIST_LIMIT, offset: 0 } });
+        setLocalDuplicateNames(new Set(existing.items.map((s) => s.name)));
+      } catch {
+        setLocalDuplicateNames(new Set());
+      }
+    } catch (err) {
+      localLoadedRef.current = false;
+      setLocalError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLocalLoading(false);
+    }
+  }, []);
+
+  // 切到 local mode 时自动遍历本地技能（localLoadedRef 防止重复请求）。
+  useEffect(() => {
+    if (mode === 'local' && !localLoadedRef.current && !localLoading && !localError) {
+      void loadLocalSkills();
+    }
+  }, [mode, localLoading, localError, loadLocalSkills]);
   const loadPersonalSkills = useCallback(async () => {
     setPersonalLoading(true);
     setPersonalLoadError(null);
@@ -469,6 +592,75 @@ export default function ImportSkillDialog(props: {
         return;
       }
 
+      // ==== 从本地导入：逐个读取本地 skill 内容 → createSkill 落 personal 库 ====
+      if (mode === 'local') {
+        // 三重预检：勾选集合 × 重名 × 命名非法；任一命中都不导入（方案 A + 命名过滤）。
+        const targets = localSkills.filter(
+          (s) =>
+            selectedLocalPaths.has(s.path) &&
+            !localDuplicateNames.has(s.name) &&
+            !localInvalidNames.has(s.name),
+        );
+        if (targets.length === 0) {
+          throw new Error(t('importSkill.local.error.noSelection'));
+        }
+        let okCount = 0;
+        const failures: string[] = [];
+        for (let i = 0; i < targets.length; i++) {
+          const src = targets[i];
+          setImportProgress(
+            t('importSkill.local.progress', { index: i + 1, total: targets.length, name: src.name }),
+          );
+          try {
+            // Step 1: 后端按 path 读取 SKILL.md（content）+ 资源文件（resources）。
+            const full = await withRetry(() => getLocalAgentSkillContent(src.path));
+            // Step 2: 落到个人库（Panel 服务端注入 team_id='personal' 身份）。
+            // 外面包一层 withRetry：面板→内核偶发 502（fetch failed）自愈，避免误报失败。
+            await withRetry(() =>
+              skillApi.createSkill({
+                user_id: props.userId,
+                team_id: props.teamId,
+                agent_id: agentId || props.userId,
+                name: src.name,
+                content: full.content,
+                resources: full.resources.length
+                  ? full.resources.map((r) => ({
+                      path: r.path,
+                      content: r.content,
+                      encoding: r.encoding,
+                      mime_type: r.mime_type,
+                      is_executable: r.is_executable || undefined,
+                    }))
+                  : undefined,
+                metadata: {
+                  imported_from: 'local',
+                  local_path: src.path,
+                  local_agents: src.agents.join(','),
+                },
+              }),
+            );
+            okCount++;
+          } catch (err) {
+            failures.push(`${src.name}: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+        setImportProgress(null);
+        if (okCount === 0) {
+          throw new Error(t('importSkill.local.allFailed', { detail: failures.join('; ') }));
+        }
+        const msg =
+          failures.length > 0
+            ? t('importSkill.local.partial', {
+                ok: okCount,
+                total: targets.length,
+                detail: failures.join('; '),
+              })
+            : t('importSkill.local.success', { count: okCount });
+        setResult(msg);
+        setTimeout(() => props.onImported(), 1500);
+        return;
+      }
+
       // ==== 目录导入：走 v3 create + files/write ====
       if (!partition?.mainFile) {
         throw new Error(partition?.warning ?? t('importSkill.error.noMainFile'));
@@ -538,15 +730,23 @@ export default function ImportSkillDialog(props: {
     }
   }
 
+  // insight 模式的提交态并入 busy：统一驱动取消/ESC 禁用与主按钮 loading。
+  const busy = submitting || insightSubmitting;
+  // 弹窗顶部提示随模式组合调整：个人库（目录 + 对话洞察）不提「粘贴对话」。
+  const hintText =
+    !modes.includes('session') && modes.includes('insight')
+      ? t('importSkill.hint.insight')
+      : t('importSkill.hint');
+
   // 是否需要在弹窗内显示「归属 Agent」选择器：
   //   - 仅 fixed-target 才有 agent 归属概念
   //   - 必须传了 agents 才能渲染下拉
   const showAgentPicker = props.target === 'fixed' && !!props.agents;
 
   return (
-    <Modal visible caption={t('importSkill.caption')} size="l" onClose={props.onClose} disableEscape={submitting}>
+    <Modal visible caption={t('importSkill.caption')} size="l" onClose={props.onClose} disableEscape={busy}>
       <Modal.Body>
-        <Alert type="info">{t('importSkill.hint')}</Alert>
+        <Alert type="info">{hintText}</Alert>
       {/* 归属 Agent —— 必选项。始终展示在导入方式上方，
           与 ChatMemoryPanel.ImportBlockDialog 一致：即便外层已经传了 agentId
           也允许在弹窗里重选。 */}
@@ -577,22 +777,30 @@ export default function ImportSkillDialog(props: {
         </Form>
       )}
 
-      {/* Mode tabs：directory（目录导入）/ personal（从我的技能导入）/ session（对话导入） */}
+      {/* Mode tabs：directory（目录导入）/ insight（从对话洞察导入，个人库专用）
+          / personal（从我的技能导入）/ session（对话导入） */}
       <Segment
         className="_memory-isd-mode-segment"
         value={mode}
         onChange={(v) => {
           setImportProgress(null);
+          // 离开 insight tab 时重置就绪态：面板重挂载后会重新上报，
+          // 否则重进时主按钮会有一瞬间的"上次已就绪"假象。
+          setInsightReady(false);
           setMode(v as Mode);
         }}
         options={modes.map((m) => ({
           value: m,
           text:
-            m === 'directory'
-              ? t('importSkill.mode.directory')
-              : m === 'personal'
-                ? t('importSkill.mode.personal')
-                : t('importSkill.mode.session'),
+            m === 'local'
+              ? t('importSkill.mode.local')
+              : m === 'directory'
+                ? t('importSkill.mode.directory')
+                : m === 'personal'
+                  ? t('importSkill.mode.personal')
+                  : m === 'insight'
+                    ? t('importSkill.mode.insight')
+                    : t('importSkill.mode.session'),
         }))}
       />
 
@@ -663,6 +871,85 @@ export default function ImportSkillDialog(props: {
         </div>
       )}
 
+      {/* 从本地导入：自动遍历本机各 AI Agent 客户端的本地 skill 目录，勾选后导入到「我的技能」。 */}
+      {mode === 'local' && (
+        <div className="_memory-isd-section">
+          <Alert type="info">{t('importSkill.local.hint')}</Alert>
+          {localLoading ? (
+            <span className="_memory-isd-label">{t('importSkill.local.scanning')}</span>
+          ) : localError ? (
+            <div className="_memory-isd-section">
+              <Alert type="error">{localError}</Alert>
+              <Button onClick={() => void loadLocalSkills()}>{t('importSkill.local.retry')}</Button>
+            </div>
+          ) : localSkills.length === 0 ? (
+            <span className="_memory-isd-label">{t('importSkill.local.empty')}</span>
+          ) : (
+            <>
+              <div className="_memory-isd-personal-toolbar">
+                <Checkbox
+                  value={
+                    localSkills.filter(
+                      (s) => !localDuplicateNames.has(s.name) && !localInvalidNames.has(s.name),
+                    ).length > 0 &&
+                    localSkills
+                      .filter((s) => !localDuplicateNames.has(s.name) && !localInvalidNames.has(s.name))
+                      .every((s) => selectedLocalPaths.has(s.path))
+                  }
+                  onChange={(checked) => {
+                    const importable = localSkills.filter(
+                      (s) => !localDuplicateNames.has(s.name) && !localInvalidNames.has(s.name),
+                    );
+                    setSelectedLocalPaths(
+                      checked ? new Set(importable.map((s) => s.path)) : new Set<string>(),
+                    );
+                  }}
+                >
+                  {t('importSkill.local.selectAll')}
+                </Checkbox>
+                <span className="_memory-isd-picked-count">
+                  {t('importSkill.local.selectedCount', { count: selectedLocalPaths.size })}
+                </span>
+              </div>
+              <ul className="_memory-isd-personal-list">
+                {localSkills.map((s) => {
+                  const dup = localDuplicateNames.has(s.name);
+                  const invalid = localInvalidNames.has(s.name);
+                  const disabled = dup || invalid;
+                  const checked = selectedLocalPaths.has(s.path);
+                  return (
+                    <li
+                      key={s.path}
+                      className={disabled ? '_memory-isd-personal-item is-disabled' : '_memory-isd-personal-item'}
+                    >
+                      <Checkbox
+                        value={checked}
+                        disabled={disabled}
+                        onChange={(next) => {
+                          setSelectedLocalPaths((prev) => {
+                            const copy = new Set(prev);
+                            if (next) copy.add(s.path);
+                            else copy.delete(s.path);
+                            return copy;
+                          });
+                        }}
+                      >
+                        <span className="_memory-isd-personal-name">{s.name}</span>
+                        <span className="_memory-isd-personal-meta">{s.agents.join(', ')}</span>
+                        {dup && <span className="_memory-isd-personal-dup">{t('importSkill.local.duplicate')}</span>}
+                        {invalid && (
+                          <span className="_memory-isd-personal-dup">{t('importSkill.local.invalidName')}</span>
+                        )}
+                      </Checkbox>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
       {mode === 'directory' && (
         <div className="_memory-isd-section">
           <div className="_memory-isd-label">{t('importSkill.directory.label')}</div>
@@ -717,6 +1004,20 @@ export default function ImportSkillDialog(props: {
         </div>
       )}
 
+      {/* 从对话洞察导入：面板自带会话选择 / 预览 / 提交逻辑，
+          提交按钮仍由本弹窗 Footer 承载（ref.submit），状态经回调上行。 */}
+      {mode === 'insight' && (
+        <div className="_memory-isd-section">
+          <InsightImportPanel
+            ref={insightPanelRef}
+            userId={props.userId}
+            onImported={props.onImported}
+            onReadyChange={setInsightReady}
+            onSubmittingChange={setInsightSubmitting}
+          />
+        </div>
+      )}
+
       {mode === 'session' && (
         <div className="_memory-isd-section">
           <Alert type="info">
@@ -762,26 +1063,41 @@ export default function ImportSkillDialog(props: {
       <Modal.Footer>
         <Button
           type="primary"
-          onClick={() => void submit()}
+          onClick={() => {
+            // insight 模式的提交逻辑在面板内（含软超时兜底），这里只转发触发。
+            if (mode === 'insight') {
+              insightPanelRef.current?.submit();
+              return;
+            }
+            void submit();
+          }}
           disabled={
-            submitting
+            busy
             || (mode === 'directory'
               ? !partition?.mainFile
               : mode === 'personal'
                 ? selectedPersonalIds.size === 0
-                : !sessionPayload.trim())
+                : mode === 'insight'
+                  ? !insightReady
+                  : mode === 'local'
+                    ? selectedLocalPaths.size === 0
+                    : !sessionPayload.trim())
             || (props.target === 'fixed' && !selectedAgentId)
           }
           title={props.target === 'fixed' && !selectedAgentId ? t('importSkill.error.noAgentHint') : ''}
-          loading={submitting}
+          loading={busy}
         >
           {mode === 'session'
             ? t('importSkill.session.submit')
             : mode === 'personal'
               ? t('importSkill.personal.submit')
-              : t('importSkill.submit')}
+              : mode === 'insight'
+                ? t('importFromInsight.submit')
+                : mode === 'local'
+                  ? t('importSkill.local.submit')
+                  : t('importSkill.submit')}
         </Button>
-        <Button onClick={props.onClose} disabled={submitting}>{t('importSkill.cancel')}</Button>
+        <Button onClick={props.onClose} disabled={busy}>{t('importSkill.cancel')}</Button>
       </Modal.Footer>
     </Modal>
   );

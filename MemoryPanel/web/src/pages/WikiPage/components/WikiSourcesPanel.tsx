@@ -71,6 +71,7 @@ export default function WikiSourcesPanel() {
     openDetail,
     handleUnbindWiki,
     handleCreate,
+    handleToggleVisibility,
     // computed
     stats,
     filteredSources,
@@ -93,14 +94,17 @@ export default function WikiSourcesPanel() {
           </Text>
         }
         scope={
-          <Segment
-            value={scopeTab}
-            onChange={(value) => setScopeTab(value as WikiScopeTab)}
-            options={(['team'] as WikiScopeTab[]).map((tab) => ({
-              value: tab,
-              text: t(SCOPE_LABEL_KEYS[tab]),
-            }))}
-          />
+          // 两档：「团队」= visibility=team；「我的」= 团队空间内 private 且 owner=我。
+          <span title={t('wiki.scope.mine.tooltip')}>
+            <Segment
+              value={scopeTab}
+              onChange={(value) => setScopeTab(value as WikiScopeTab)}
+              options={(['team', 'mine'] as WikiScopeTab[]).map((tab) => ({
+                value: tab,
+                text: t(SCOPE_LABEL_KEYS[tab]),
+              }))}
+            />
+          </span>
         }
         agent={
           scopeTab === 'fixed' ? (
@@ -184,8 +188,17 @@ export default function WikiSourcesPanel() {
               emptyText={
                 <div className="_asset-wiki-empty">
                   <BooksIcon size="large" />
-                  <Text>{t('wiki.empty.title')}</Text>
-                  <Text theme="label">{t('wiki.empty.desc')}</Text>
+                  {scopeTab === 'mine' ? (
+                    <>
+                      <Text>{t('wiki.empty.mine.title')}</Text>
+                      <Text theme="label">{t('wiki.empty.mine.desc')}</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text>{t('wiki.empty.title')}</Text>
+                      <Text theme="label">{t('wiki.empty.desc')}</Text>
+                    </>
+                  )}
                 </div>
               }
             />
@@ -231,6 +244,7 @@ export default function WikiSourcesPanel() {
                     onAllocate={setAllocateTarget}
                     onUnbind={handleUnbindWiki}
                     onDelete={handleDelete}
+                    onToggleVisibility={handleToggleVisibility}
                   />
                 </div>
               ))}
@@ -314,6 +328,7 @@ export default function WikiSourcesPanel() {
                       onAllocate={setAllocateTarget}
                       onUnbind={handleUnbindWiki}
                       onDelete={handleDelete}
+                      onToggleVisibility={handleToggleVisibility}
                     />
                   ),
                 },

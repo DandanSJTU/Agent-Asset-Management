@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>黑客松答辩 · Team Memory Hub</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#090c12;--surface:#111620;--surface2:#171f2d;--surface3:#1d2738;
+  --border:#1d2637;--border2:#2b3850;
+  --text:#d7e2ef;--hi:#f1f6ff;--muted:#6b7b91;--muted2:#93a6bd;
+  --blue:#4a97f5;--blue2:#73b4ff;--blue-d:rgba(74,151,245,.12);--blue-b:rgba(74,151,245,.34);
+  --amber:#f5a020;--amber-d:rgba(245,160,32,.11);--amber-b:rgba(245,160,32,.34);
+  --green:#38b870;--green-d:rgba(56,184,112,.10);--green-b:rgba(56,184,112,.32);
+  --red:#e85d4f;--red-d:rgba(232,93,79,.10);--red-b:rgba(232,93,79,.32);
+  --violet:#a78bfa;--violet-d:rgba(167,139,250,.10);--violet-b:rgba(167,139,250,.30);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  -webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:
+  radial-gradient(70% 80% at 15% 18%,rgba(74,151,245,.10),transparent 55%),
+  radial-gradient(75% 75% at 88% 12%,rgba(245,160,32,.08),transparent 56%),
+  linear-gradient(180deg,rgba(255,255,255,.018),transparent 20%),
+  url("data:image/svg+xml,%3Csvg width='56' height='56' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 55.5h56M55.5 0v56' stroke='rgba(255,255,255,0.026)'/%3E%3C/svg%3E")}
+.deck{width:100vw;height:100vh;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;padding:52px 76px 64px;display:none;flex-direction:column;pointer-events:none}
+.slide.active{display:flex;pointer-events:auto}
+#prog{position:fixed;left:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--blue),rgba(74,151,245,.28));z-index:10;transition:width .25s}
+#counter{position:fixed;right:26px;bottom:17px;color:var(--muted);font-size:11px;letter-spacing:.12em;z-index:10}
+#hint{position:fixed;left:26px;bottom:17px;color:rgba(107,123,145,.42);font-size:11px;z-index:10}
+.tag{display:flex;align-items:center;gap:10px;margin-bottom:18px;color:var(--blue);font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.tag::before{content:"";width:24px;height:2px;background:var(--blue);border-radius:2px}
+.tag.am{color:var(--amber)}.tag.am::before{background:var(--amber)}
+.tag.gr{color:var(--green)}.tag.gr::before{background:var(--green)}
+.tag.vi{color:var(--violet)}.tag.vi::before{background:var(--violet)}
+.tag.rd{color:var(--red)}.tag.rd::before{background:var(--red)}
+h1{font-size:clamp(54px,7vw,98px);line-height:.96;letter-spacing:-.055em;color:var(--hi);font-weight:920}
+h2{font-size:clamp(30px,3.55vw,50px);line-height:1.08;letter-spacing:-.038em;color:var(--hi);font-weight:880;max-width:1100px}
+h3{font-size:clamp(17px,1.55vw,22px);line-height:1.28;color:var(--hi);font-weight:760}
+p{font-size:clamp(14px,1.25vw,18px);line-height:1.72;color:var(--text)}
+.sub{font-size:clamp(15px,1.42vw,20px);color:var(--muted2);line-height:1.6;margin-top:12px;max-width:900px}
+.hi{color:var(--hi)}.mu{color:var(--muted2)}.blue{color:var(--blue2)}.amber{color:var(--amber)}.green{color:var(--green)}.red{color:var(--red)}.violet{color:var(--violet)}
+.content{flex:1;display:flex;flex-direction:column}.center{justify-content:center}.g2{display:grid;grid-template-columns:1fr 1fr;gap:22px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.fx{display:flex}.fc{flex-direction:column}.fi{align-items:center}.fb{justify-content:space-between}.gap8{gap:8px}.gap12{gap:12px}.gap16{gap:16px}.gap20{gap:20px}.gap28{gap:28px}.mt8{margin-top:8px}.mt14{margin-top:14px}.mt20{margin-top:20px}.mt28{margin-top:28px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.005)),var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.blue-card{background:var(--blue-d);border-color:var(--blue-b)}.amber-card{background:var(--amber-d);border-color:var(--amber-b)}.green-card{background:var(--green-d);border-color:var(--green-b)}.red-card{background:var(--red-d);border-color:var(--red-b)}.violet-card{background:var(--violet-d);border-color:var(--violet-b)}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:750;letter-spacing:.06em;white-space:nowrap}
+.b-blue{background:rgba(74,151,245,.15);color:var(--blue2)}.b-amber{background:rgba(245,160,32,.16);color:var(--amber)}.b-green{background:rgba(56,184,112,.14);color:var(--green)}.b-red{background:rgba(232,93,79,.15);color:var(--red)}.b-mu{background:rgba(147,166,189,.11);color:var(--muted2)}.b-vi{background:rgba(167,139,250,.14);color:var(--violet)}
+ul{list-style:none;display:flex;flex-direction:column;gap:9px}li{font-size:clamp(13px,1.22vw,17px);line-height:1.55;color:var(--text);display:flex;gap:10px;align-items:flex-start}li::before{content:"→";color:var(--blue);font-weight:800;flex-shrink:0}.red-list li::before{content:"×";color:var(--red)}.check li::before{content:"✓";color:var(--green)}.amber-list li::before{content:"◆";color:var(--amber)}
+.big{font-size:clamp(36px,4.5vw,66px);line-height:1.08;letter-spacing:-.048em;color:var(--hi);font-weight:900}
+.quote{font-size:clamp(28px,3.4vw,47px);line-height:1.24;letter-spacing:-.035em;color:var(--hi);font-weight:880}.quote .dim{color:var(--muted);font-weight:760}
+.note{font-size:12px;color:var(--muted);line-height:1.55}.source{font-size:10px;color:var(--muted);line-height:1.45;margin-top:8px}
+.divider{height:1px;background:var(--border);margin:18px 0}
+.cover{justify-content:flex-end;padding-bottom:72px}.cover .eyebrow{font-size:12px;color:var(--muted);letter-spacing:.22em;text-transform:uppercase;margin-bottom:22px}.cover .by{margin-top:24px;color:var(--muted2);font-size:13px;letter-spacing:.03em}
+/* —— 新增：对比表 / 映射表 —— */
+.tbl{width:100%;border-collapse:separate;border-spacing:0;margin-top:14px;font-size:clamp(12px,1.12vw,15px)}
+.tbl th,.tbl td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+.tbl thead th{color:var(--hi);font-weight:800;letter-spacing:.02em;font-size:clamp(13px,1.18vw,16px);border-bottom:1px solid var(--border2)}
+.tbl tbody th{color:var(--blue2);font-weight:760;white-space:nowrap}
+.tbl td{color:var(--muted2);line-height:1.5}
+.tbl .col-us{background:var(--blue-d)}
+.tbl thead .col-us{background:var(--blue-d);color:var(--hi);border-top-left-radius:8px;border-top-right-radius:8px}
+.tbl tbody .col-us{color:var(--hi);font-weight:600}
+.tbl .yes{color:var(--green);font-weight:700}.tbl .no{color:var(--red);font-weight:600}
+.map-row{display:grid;grid-template-columns:240px 1fr;gap:18px;margin-top:14px;align-items:stretch}
+.map-row .lhs{display:flex;flex-direction:column;justify-content:center}
+.map-row .rhs{display:flex;flex-direction:column;justify-content:center}
+/* —— 新增：架构竖向流程 —— */
+.arch{display:flex;flex-direction:column;gap:0;margin-top:14px}
+.arch .layer{display:flex;align-items:center;gap:18px}
+.arch .layer .step{flex:0 0 168px}
+.arch .layer .desc{flex:1}
+.arch .conn{height:26px;display:flex;align-items:center;color:var(--muted);font-size:18px;padding-left:74px}
+/* —— 新增：横向流程（DEMO2）—— */
+.flow{display:flex;align-items:stretch;gap:12px;margin-top:18px}
+.flow .node{flex:1}
+.flow .arrow{display:flex;align-items:center;color:var(--blue);font-size:26px;font-weight:800}
+/* —— 新增：趋势柱（DEMO3）—— */
+.bars{display:flex;align-items:flex-end;gap:14px;height:150px;margin-top:18px;padding:0 4px}
+.bars .bar{flex:1;background:linear-gradient(180deg,var(--blue2),rgba(74,151,245,.25));border-radius:6px 6px 0 0;position:relative;min-width:0}
+.bars .bar span{position:absolute;top:-22px;left:0;right:0;text-align:center;color:var(--hi);font-size:12px;font-weight:700}
+.bars .bar em{position:absolute;bottom:-22px;left:0;right:0;text-align:center;color:var(--muted);font-size:11px;font-style:normal}
+.members{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+.members .m{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.members .m .nm{color:var(--hi);font-weight:760;font-size:15px}
+.members .m .ct{color:var(--blue2);font-size:13px;margin-top:6px;line-height:1.5}
+.tmeta{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+@media(max-width:900px){
+  .slide{padding:22px 20px 44px}.content.center{justify-content:flex-start}.tag{margin-bottom:10px}
+  h1{font-size:44px}h2{font-size:clamp(24px,8vw,32px);line-height:1.12}h3{font-size:15px}p,li{font-size:12px;line-height:1.38}
+  .sub{font-size:14px}.quote{font-size:clamp(24px,7vw,30px)}.big{font-size:34px}
+  .card{padding:12px 14px;border-radius:8px}.g2,.g3,.g4{grid-template-columns:1fr;gap:10px}
+  .mt14{margin-top:9px}.mt20{margin-top:12px}.mt28{margin-top:16px}.divider{margin:12px 0}
+  .tbl{font-size:10px}.tbl th,.tbl td{padding:7px 8px}.map-row{grid-template-columns:1fr;gap:6px}
+  .flow{flex-direction:column}.flow .arrow{justify-content:center;transform:rotate(90deg)}
+  .arch .layer{flex-direction:column;align-items:flex-start;gap:6px}.arch .layer .step{flex:none}.arch .conn{padding-left:0}
+  .members{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 封面 / 钩子（合并标题页） -->
+<section class="slide cover active">
+  <div class="eyebrow">黑客松答辩 · T 团队赛道（Teamwork）</div>
+  <h1>Context<br>是越多越好吗？</h1>
+  <p class="sub">当 AI 成为团队一员，经验却留在人的脑子里——经验正在蒸发。</p>
+  <div class="by">Team Memory Hub · Agent 资产管理　|　TencentDB-Agent-Memory</div>
+</section>
+
+<!-- P2 真实问题：四个摩擦 -->
+<section class="slide">
+  <div class="tag rd">真实问题</div>
+  <h2>四个摩擦，每天都在发生</h2>
+  <div class="content center">
+    <div class="g2 mt20">
+      <div class="card red-card">
+        <span class="badge b-red">01</span>
+        <h3 class="mt14">经验在蒸发</h3>
+        <p class="mu mt8">成功提效的经验变不成团队资产，换个人做同样的事还得从零来。</p>
+      </div>
+      <div class="card red-card">
+        <span class="badge b-red">02</span>
+        <h3 class="mt14">输出时好时坏</h3>
+        <p class="mu mt8">同样的需求，内容生成、周报、策略质量都不稳定，缺乏统一标准。</p>
+      </div>
+      <div class="card red-card">
+        <span class="badge b-red">03</span>
+        <h3 class="mt14">换个会从头讲</h3>
+        <p class="mu mt8">团队同一件事，换个人、换场会就要重建上下文，协作先花一半时间对齐。</p>
+      </div>
+      <div class="card red-card">
+        <span class="badge b-red">04</span>
+        <h3 class="mt14">Context 越多越笨</h3>
+        <p class="mu mt8">所有背景塞进一个窗口，AI 反而越问越笨，关键标准被噪音淹没。</p>
+      </div>
+    </div>
+  </div>
+  <div class="note">⏱ 0:30–1:00 · 表面是四个问题，根因其实是一个。</div>
+</section>
+
+<!-- P3 根因洞察 -->
+<section class="slide">
+  <div class="tag am">根因洞察</div>
+  <h2>根因：没有个人 / 团队 context architecture</h2>
+  <div class="content center">
+    <div class="quote mt14">外化是手段，<span class="blue">复用是目的</span>，<span class="amber">记忆是载体</span>。</div>
+    <div class="divider mt28"></div>
+    <div class="card blue-card mt8">
+      <h3>因果链</h3>
+      <ul class="mt14 amber-list">
+        <li>经验没沉淀 → 每次跑数据、写周报都要重新解释背景</li>
+        <li>每个人用法不同 → 十几个 skill 对同一概念定义互相打架</li>
+        <li>AI 没看到你的标准 → 风格偏好、业务判断、质量红线都在脑子里</li>
+        <li>结论：经验没留下来，今天省的时间，明天还会花回去</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">⏱ 1:00–1:45 · 那我们做了什么？</div>
+</section>
+
+<!-- P4 方案一句话 -->
+<section class="slide">
+  <div class="tag">方案</div>
+  <div class="content center">
+    <span class="badge b-blue">产品定位</span>
+    <div class="big mt20">Team Memory Hub<br><span class="blue">Agent 资产管理</span></div>
+    <p class="sub mt20">把人和 AI 协作产生的对话，<span class="hi">自动存储、分层提炼成可复用记忆</span>，结合个人 Skill 与 Wiki，支持建团队、个人技能一键共享到团队，并一键部署 Agent 环境。挂载这些记忆文件，AI 就能调用沉淀的经验工作。</p>
+  </div>
+  <div class="note">⏱ 1:45–2:15 · 但市面上的记忆方案不少，我们的不同在哪？</div>
+</section>
+
+<!-- P5 创新度对比表（重点页） -->
+<section class="slide">
+  <div class="tag">创新度 · 30%</div>
+  <h2>我们和 Mem0 / Zep 不一样</h2>
+  <div class="content">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>维度</th>
+          <th>长上下文</th>
+          <th>RAG</th>
+          <th>Mem0 · Zep</th>
+          <th class="col-us">本项目</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th>存储方式</th><td>塞进窗口</td><td>向量检索</td><td>个人记忆 + 向量摘要</td><td class="col-us">L0→L3 级联蒸馏</td></tr>
+        <tr><th>是否分层提炼</th><td class="no">×</td><td class="no">×</td><td class="no">×</td><td class="col-us yes">✓ 原子→场景→人设</td></tr>
+        <tr><th>是否团队共享</th><td class="no">×</td><td class="no">×</td><td class="no">×（个人）</td><td class="col-us yes">✓ 团队资产库</td></tr>
+        <tr><th>是否框架无关</th><td class="no">×</td><td class="no">×</td><td class="no">×</td><td class="col-us yes">✓ Proxy 零代码接入</td></tr>
+        <tr><th>是否自动萃取资产</th><td class="no">×</td><td class="no">×</td><td class="no">×</td><td class="col-us yes">✓ Skill/Wiki/CodeGraph</td></tr>
+      </tbody>
+    </table>
+    <div class="g4 mt28">
+      <div class="card blue-card"><h3>级联蒸馏</h3><p class="mu mt8">对话→原子→场景→人设，层层提炼而非塞进去再搜。</p></div>
+      <div class="card blue-card"><h3>团队资产库</h3><p class="mu mt8">新人 / 新 Agent 第一天就能加载团队存档。</p></div>
+      <div class="card blue-card"><h3>框架无关</h3><p class="mu mt8">一个 Proxy 接入 Claude/Codex/CodeBuddy/WorkBuddy。</p></div>
+      <div class="card blue-card"><h3>对话变资产</h3><p class="mu mt8">自动萃取 Skill、Wiki、CodeGraph。</p></div>
+    </div>
+  </div>
+  <div class="note">⏱ 2:15–3:15 · 评委必问，先发制人。这些能力背后是实打实的技术挑战。</div>
+</section>
+
+<!-- P6 技术架构 -->
+<section class="slide">
+  <div class="tag vi">技术难度 · 20%</div>
+  <h2>架构：四层，与真实挑战</h2>
+  <div class="content">
+    <div class="arch">
+      <div class="layer">
+        <div class="step"><span class="badge b-vi">层 1</span><h3 class="mt8">多 Agent 接入</h3></div>
+        <div class="desc"><p class="mu">Proxy 零代码接入 Claude / Codex / CodeBuddy / WorkBuddy，记忆不被任何模型锁死。</p></div>
+      </div>
+      <div class="conn">↓ 数据流</div>
+      <div class="layer">
+        <div class="step"><span class="badge b-vi">层 2</span><h3 class="mt8">L0–L3 级联管线</h3></div>
+        <div class="desc"><p class="mu">对话 → 原子记忆 → 场景块 → 人设，级联蒸馏，落地一致性是难点。</p></div>
+      </div>
+      <div class="conn">↓ 数据流</div>
+      <div class="layer">
+        <div class="step"><span class="badge b-red">层 3</span><h3 class="mt8">三后端 + scope 隔离</h3></div>
+        <div class="desc"><p class="mu">SQLite / 向量库 / MongoDB 抽象；<span class="red">scope 隔离</span>保证团队与个人边界不被污染，46 个契约测试兜住正确性。</p></div>
+      </div>
+      <div class="conn">↓ 数据流</div>
+      <div class="layer">
+        <div class="step"><span class="badge b-vi">层 4</span><h3 class="mt8">Personal / Team 双空间</h3></div>
+        <div class="desc"><p class="mu">权限与 visibility 控制，共享库可溯源审计；大请求体 / 大 Skill 正文边界处理。</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="note">⏱ 3:15–4:00 · 端到端管线已跑通，支持多框架、三后端，契约测试覆盖核心路径——不是 demo 玩具。</div>
+</section>
+
+<!-- P7 赛道契合度映射表（送分页） -->
+<section class="slide">
+  <div class="tag gr">赛道契合度 · 30%</div>
+  <h2>T 团队 = 协作，产品内核即此</h2>
+  <div class="content">
+    <div class="map-row">
+      <div class="lhs"><span class="badge b-amber">互信凝聚</span></div>
+      <div class="rhs"><div class="card amber-card"><p class="mu">经验不因人员流动蒸发——人走，经验留在团队库。</p></div></div>
+    </div>
+    <div class="map-row">
+      <div class="lhs"><span class="badge b-amber">放大价值</span></div>
+      <div class="rhs"><div class="card amber-card"><p class="mu">共享记忆库让新人 day1 站在团队肩膀上。</p></div></div>
+    </div>
+    <div class="map-row">
+      <div class="lhs"><span class="badge b-amber">可信伙伴</span></div>
+      <div class="rhs"><div class="card amber-card"><p class="mu">每条记忆可溯源、可审计——来自哪次对话、哪个人。</p></div></div>
+    </div>
+    <div class="map-row">
+      <div class="lhs"><span class="badge b-amber">协作共赢</span></div>
+      <div class="rhs"><div class="card amber-card"><p class="mu">个人 Skill 一键共享到团队，跨成员 loop 越用越厚。</p></div></div>
+    </div>
+  </div>
+  <div class="note">⏱ 4:00–4:45 · 我们不是硬套赛道，协作就是产品的内核。光说不够，看三个真实场景。</div>
+</section>
+
+<!-- P8 DEMO 1 知识复利 -->
+<section class="slide">
+  <div class="tag">DEMO 1 · 知识复利</div>
+  <h2>有无记忆，输出质量天差地别</h2>
+  <div class="content center">
+    <div class="g2 mt20">
+      <div class="card red-card">
+        <span class="badge b-red">无记忆</span>
+        <h3 class="mt14">泛泛而谈</h3>
+        <p class="mu mt8">同样问「首页信息流精排的曝光衰减打压怎么配？」AI 给的是通用建议，不接地气、不可直接用。</p>
+      </div>
+      <div class="card green-card">
+        <span class="badge b-green">挂团队记忆</span>
+        <h3 class="mt14">引出口径 / 术语 / 红线</h3>
+        <p class="mu mt8">挂载真实「推荐策略组」存档后，直接引出团队的指标口径、术语定义、风险边界——即隐性知识外化的效果。</p>
+      </div>
+    </div>
+  </div>
+  <div class="note">⏱ 4:45–5:20 · 用的是已灌入系统的真实数据。第二个场景更颠覆——交接对象从人变成 AI。</div>
+</section>
+
+<!-- P9 DEMO 2 记忆交接 -->
+<section class="slide">
+  <div class="tag">DEMO 2 · 记忆交接</div>
+  <h2>交接对象，从人转变为 AI</h2>
+  <div class="content center">
+    <div class="flow mt28">
+      <div class="node card">
+        <span class="badge b-mu">A 的对话</span>
+        <h3 class="mt14">一次真实协作</h3>
+        <p class="mu mt8">新人不再需要找老人聊半天背景。</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="node card blue-card">
+        <span class="badge b-blue">系统自动萃取</span>
+        <h3 class="mt14">Skill / 记忆</h3>
+        <p class="mu mt8">对话 → 可复用资产，沉淀进团队库。</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="node card green-card">
+        <span class="badge b-green">B / 新 Agent</span>
+        <h3 class="mt14">直接调用产出</h3>
+        <p class="mu mt8">on-brand 成果，无需重新解释背景。</p>
+      </div>
+    </div>
+    <p class="sub mt28">现场演示真实链路：<span class="blue">「我的技能 → 从对话洞察导入」</span>。</p>
+  </div>
+  <div class="note">⏱ 5:20–5:55 · 第三个场景，看团队随时间发生的变化。</div>
+</section>
+
+<!-- P10 DEMO 3 团队 loop -->
+<section class="slide">
+  <div class="tag">DEMO 3 · 团队 loop</div>
+  <h2>共享记忆越协作越厚（可量化）</h2>
+  <div class="content">
+    <div class="members">
+      <div class="m"><div class="nm">产品</div><div class="ct">记忆 32 · Skill 4<br>Wiki 1</div></div>
+      <div class="m"><div class="nm">工程</div><div class="ct">记忆 28 · Skill 6<br>Wiki 1</div></div>
+      <div class="m"><div class="nm">算法</div><div class="ct">记忆 25 · Skill 5<br>Wiki 1</div></div>
+      <div class="m"><div class="nm">测试</div><div class="ct">记忆 19 · Skill 3<br>Wiki 1</div></div>
+    </div>
+    <p class="sub mt20">成员 × 资产矩阵：每人记忆 / Skill / Wiki 一目了然，团队共享库独立成列。</p>
+    <div class="bars">
+      <div class="bar" style="height:32%"><span>Q1</span><em>12</em></div>
+      <div class="bar" style="height:55%"><span>Q2</span><em>31</em></div>
+      <div class="bar" style="height:74%"><span>Q3</span><em>58</em></div>
+      <div class="bar" style="height:100%"><span>Q4</span><em>104</em></div>
+    </div>
+    <p class="sub">每跑一轮，团队存档变厚、下轮起步更高——共享记忆是越协作越厚的活资产，正是「用团队力量放大价值」的量化证明。</p>
+  </div>
+  <div class="note">⏱ 5:55–6:30 · 最后一句话收尾。</div>
+</section>
+
+<!-- P11 收尾 -->
+<section class="slide">
+  <div class="tag">收尾</div>
+  <div class="content center">
+    <div class="quote">Agents remember.<br><span class="blue">Humans innovate.</span></div>
+    <div class="divider mt28"></div>
+    <p class="sub fi">让团队经验，像代码一样沉淀、复用、传承。AI 该记住的，不该每次重新教；经验留下来，今天省的时间，明天不用再花回去。谢谢大家，欢迎提问。</p>
+  </div>
+  <div class="note">⏱ 6:30–7:00 · 留 30s 缓冲。</div>
+</section>
+
+</div>
+<div id="prog"></div><div id="counter"></div><div id="hint">← / → 翻页 · F 全屏</div>
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+slides.forEach((slide,i)=>{if(!slide.id)slide.id=`slide-${String(i+1).padStart(2,'0')}`;});
+let idx=0;
+const prog=document.getElementById('prog'),counter=document.getElementById('counter');
+function indexFromHash(){
+  const match=location.hash.match(/^#slide-(\d+)$/);
+  if(!match)return 0;
+  return Math.max(0,Math.min(slides.length-1,Number(match[1])-1));
+}
+function show(n,{updateHash=true}={}){
+  idx=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,i)=>s.classList.toggle('active',i===idx));
+  prog.style.width=((idx+1)/slides.length*100)+'%';
+  counter.textContent=String(idx+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+  if(updateHash){
+    const hash=`#${slides[idx].id}`;
+    if(location.hash!==hash)history.replaceState(null,'',hash);
+  }
+}
+function next(){show(idx+1)}function prev(){show(idx-1)}
+document.addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();next()}if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();prev()}if(e.key.toLowerCase()==='f'){document.documentElement.requestFullscreen?.()}});
+document.addEventListener('click',e=>{if(e.target.closest('a'))return; if(e.clientX>innerWidth*.5)next();else prev();});
+let sx=0;document.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>40)(dx<0?next:prev)();},{passive:true});
+window.addEventListener('hashchange',()=>show(indexFromHash(),{updateHash:false}));
+show(indexFromHash(),{updateHash:location.hash===""});
+</script>
+</body>
+</html>

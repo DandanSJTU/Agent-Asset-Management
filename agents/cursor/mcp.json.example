@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "team7-memory": {
+      "command": "<你的装有 mcp 的 python 解释器绝对路径，例如 /usr/bin/python3 或某 venv 下的 python>",
+      "args": [
+        "<项目根目录>/agents/cursor/mcp-server/memory_mcp_server.py"
+      ],
+      "env": {
+        "MEMORY_ENDPOINT": "http://127.0.0.1:8420",
+        "MEMORY_API_KEY": "sk-mem-local-admin",
+        "SERVICE_ID": "default",
+        "TEAM_ID": "<你的团队 ID>",
+        "KNOWLEDGE_ENDPOINT": "http://127.0.0.1:8424"
+      }
+    }
+  }
+}

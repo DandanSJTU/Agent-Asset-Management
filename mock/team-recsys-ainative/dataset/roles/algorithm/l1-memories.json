@@ -1,0 +1,124 @@
+{
+  "role": "algorithm",
+  "displayName": "算法（Builder / 推荐算法）",
+  "agentId": "agt-mock-alg",
+  "userId": "usr-mock-alg",
+  "teamId": "team-mockrec01",
+  "sessions": [
+    {
+      "sessionId": "mock://team-recsys/algorithm/2026-09-12-fine-rank-iteration",
+      "title": "精排迭代 · MMoE/PPNet/PCGrad 与大模型方向",
+      "startedAt": "2026-09-12T03:00:00.000Z",
+      "endedAt": "2026-09-12T06:20:00.000Z",
+      "recordCount": 158,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 90,
+          "scene_name": "团队在推进精排模型的多目标多场景与大模型方向迭代",
+          "content": "精排演进主线为 TS 系列（一期/二期去 uid cid/三期行为序列升级）→ 多目标多场景（MMoE 有收益；PPNet 出现 train auc 正、eval auc 负的过拟合迹象）→ debias（纠偏位置/曝光偏差）→ 时长建模 → 大模型方向（LLM-emb 引入、Double Attention、超长序列、生成式推荐）。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 86,
+          "scene_name": "团队在推进精排模型的多目标多场景与大模型方向迭代",
+          "content": "PCGrad 多目标梯度调和的调研结论：全量 dense 与仅共享层做 PCGrad 结论类似——点击 GAUC 负向 5.8~6.9 个万分位、时长 ndcg 负向 1.2~1.6 个万分位，但导流提升 1.3~1.9 个千/百分位；即 PCGrad 在点击上负向、需权衡，未推全。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 84,
+          "scene_name": "团队在推进精排模型的多目标多场景与大模型方向迭代",
+          "content": "2023H2 精排全年收益（行前 + 行中长期对照）：行前人均点击 pv +4.54%、点击 uv +3.10%、人均列表内容时长 +3.45%、曝光渗透 +0.70%；行中 +10.75% / +7.51% / +4.11% / +1.01%；汇总（曝光 pv 口径）点击 pv +5.83%、点击 uv +4.02%、时长 +3.59%、渗透 +0.76%。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 80,
+          "scene_name": "团队在推进精排模型的多目标多场景与大模型方向迭代",
+          "content": "针对 ID 类特征导致「曝光越多分发越多」的中心化问题，算法侧从内容侧引入信号：side-information 入图节点（EGES / GCN / GraphSage）、LLM-emb 做聚类与标签 T2I、LLM-emb self-attention、长序列建模（GSU+ESU、ETA+simhash 优化 SIM）、LLM-emb DIN 系 target-attention。"
+        },
+        {
+          "type": "work_task",
+          "priority": 78,
+          "scene_name": "团队在推进精排模型的多目标多场景与大模型方向迭代",
+          "content": "生成式推荐为 2026 方向，仍在调研未上线：含端到端生成式（tokenizer、OpenOneRec 落地、生成式召回 serving）与 Scaling up 大模型（hyperrec_918 / hyperrec_858_rankmixer_max_seq）。",
+          "metadata": { "owner": "usr-mock-alg", "deadline": "2026-12-31", "status": "researching" }
+        }
+      ]
+    },
+    {
+      "sessionId": "mock://team-recsys/algorithm/2026-09-25-recall-vectorization",
+      "title": "召回迭代 · U2I HSTU 架构升级与 I2I 通道实验",
+      "startedAt": "2026-09-25T05:30:00.000Z",
+      "endedAt": "2026-09-25T08:00:00.000Z",
+      "recordCount": 121,
+      "memories": [
+        {
+          "type": "work_fact",
+          "priority": 88,
+          "scene_name": "团队在迭代召回通道与向量化模型",
+          "content": "U2I 召回 2026-05-09 架构升级（master_fea_v9_3 → master_fea_v9_3_hstu_prefix_decoder）：User Tower 从 BN→MLP(512→200→8)×2heads 换成 4 层 Prefix-Decoder Transformer（Multi-Head Attention，4 heads，d_model=64）；行为序列从 sum combiner 平铺改为每个行为 slot 作独立 token + causal attention，用户画像作 Prefix 走 bidirectional attention；Item Tower 不变。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 82,
+          "scene_name": "团队在迭代召回通道与向量化模型",
+          "content": "U2I 行为序列分层为短期（1 天 click）、中期（3/7 天）、长期（60/365 天）、多维行为（like/fav/share/follow）、搜索意图序列；架构升级主打长尾覆盖提升，线上指标数据待补（同属 210506_BBZ_eagl3 实验线）。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 85,
+          "scene_name": "团队在迭代召回通道与向量化模型",
+          "content": "I2I 方向实验结论：2025-04-09 SWI 通道用 ICF 替换原算法（实验 220520_BBZ_paixu，30% 流量），uv 点击率 +0.13%、pv 点击率 +0.40%、点击 pv +0.65%、点击 uv +0.21%、内容点击 pv +1.17%、内容点击 uv +0.36%；2024-10-31 ADA 通道优化已推全（pv 点击率 +0.07%、人均内容消费时长 +0.51%）。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 80,
+          "scene_name": "团队在迭代召回通道与向量化模型",
+          "content": "召回通道代号体系：探索/投放类 CTP、ST、TINH、ZBO/ZboOfficial、SauthV2；意图/地理类 ISA、BENDI/BENDINEARBY、HBD、PrivateGroup；相似/向量类 SWI/W2V/SFL/SFLI/DCMMII/LGC（i2i）、STS/MTI（tag emb，-size 16 -window 5 -negative 5 -sample 1e-3 -min-count 100）、DCMM/GPR/DCMMDR（u2i）、IAR；搜索/新用户类 QR、NUC、IHC。"
+        },
+        {
+          "type": "work_fact",
+          "priority": 76,
+          "scene_name": "团队在迭代召回通道与向量化模型",
+          "content": "粗排三塔实验（AB id=3393）：pv ctr -0.08%、uv ctr +0.01%、时长 +0.3%，一月新鲜度 -0.56%（显著）、top100 集中度 -1.98%（显著）；三塔 auc_clk 比基线高 2 个百分点以上，但融合后 gauc_scoreRough 反降约 1 个百分点——模型排序力增强但融合环节有损耗。"
+        }
+      ]
+    },
+    {
+      "sessionId": "mock://team-recsys/algorithm/2026-10-08-experiment-methodology",
+      "title": "实验方法论 · 离线在线一致性与重排 tradeoff",
+      "startedAt": "2026-10-08T02:40:00.000Z",
+      "endedAt": "2026-10-08T05:30:00.000Z",
+      "recordCount": 104,
+      "memories": [
+        {
+          "type": "work_method",
+          "priority": 92,
+          "scene_name": "团队在固化离线在线一致性与实验分析方法论",
+          "content": "实验三件套：离线指标（GAUC / NDCG）+ 线上 AB（主指标 + 护栏）+ 一致性（与下游重合度 / hit ratio）。任一项缺失不进推全讨论；一致性未过的改动不上线。",
+          "metadata": { "scope": "team", "method_type": "sop" }
+        },
+        {
+          "type": "work_fact",
+          "priority": 84,
+          "scene_name": "团队在固化离线在线一致性与实验分析方法论",
+          "content": "重排实验的 tradeoff 特征：2023-05-16 top1 新鲜度打压（id=6601）F 版点击 pv -0.45% / 点击 uv -0.35% 换一个月新鲜度 +1.28% / top100 集中度 +3.63%，G 版 -0.86% / -0.66% 换 +0.97% / +3.29%；DPP 多样性离线完成、批测通过但线上 F/G 版 uv 点击略负，正分析低 q 用户（精排分分桶 0-10 vs 10-100）的曝光结构影响。"
+        },
+        {
+          "type": "work_method",
+          "priority": 86,
+          "scene_name": "团队在固化离线在线一致性与实验分析方法论",
+          "content": "冷启与探索：dense 冷启锁定 seed=42（参数量约 187.7 万，锁 seed 后两遍训练差异稳定）；新产品/新内容走 explore 加权（第一/二段且 explore 完成给 1.5 倍混排加权），避免中心化分发。",
+          "metadata": { "scope": "team", "method_type": "sop" }
+        },
+        {
+          "type": "work_artifact",
+          "priority": 74,
+          "scene_name": "团队在固化离线在线一致性与实验分析方法论",
+          "content": "召回通道字典已沉淀为 Wiki：按探索/投放、意图/地理、相似/向量、搜索/新用户四类分组，逐通道记录核心逻辑、关键参数与数据表，供新同学查黑话与代号。",
+          "metadata": { "artifact_type": "wiki", "artifact_ref": "wiki-mock-alg/召回通道字典" }
+        }
+      ]
+    }
+  ]
+}

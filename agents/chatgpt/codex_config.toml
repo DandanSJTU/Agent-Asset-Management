@@ -1,0 +1,23 @@
+# ── 追加到 ~/.codex/config.toml ──────────────────────────────────────────────
+# 官方 ChatGPT 桌面端（Work 模式 / Codex 模式）与 Codex CLI 共用此配置，
+# 放在这里后，ChatGPT Work 模式与 Codex 都能看到 team7-memory 工具。
+#
+# ⚠️ 关键修复（2026-10-17）：command 必须直接指向 python 解释器 + args 指向脚本，
+#    并显式带 env 块，与 node_repl 同构。早期用 run_memory_mcp.sh 作 command 时，
+#    ChatGPT 桌面端拉起 .sh 失败、缓存了空工具目录，导致「已启用但不触发」。
+#    改用 python 直连后 command 路径变化，旧空缓存自动失效，客户端会重新发现 12 工具。
+# 注意：
+#   1) 标准 Chat 模式（非 Work/Codex）看不到本地 STDIO MCP，必须切到 Work 或 Codex 模式。
+#   2) 改完保存后，必须完全退出并重启 ChatGPT 桌面端（仅切模式不会重载 MCP 配置）。
+
+[mcp_servers.team7_memory]
+command = "/Users/dandan/.workbuddy/binaries/python/envs/default/bin/python"
+args = ["/Users/dandan/Projects/TencentDB-Agent-Memory/agents/chatgpt/memory_mcp_server.py"]
+startup_timeout_sec = 120
+
+[mcp_servers.team7_memory.env]
+MEMORY_ENDPOINT = "http://127.0.0.1:8420"
+MEMORY_API_KEY = "sk-mem-local-admin"
+SERVICE_ID = "default"
+TEAM_ID = "team-7xulumcvyl"
+KNOWLEDGE_ENDPOINT = "http://127.0.0.1:8424"

@@ -25,8 +25,9 @@ KNOWLEDGE_PORT="${KNOWLEDGE_PORT:-8424}"
 PANEL_PORT="${PANEL_PORT:-8125}"
 PROXY_PORT="${PROXY_PORT:-8096}"
 
-# curl 直连本机：绕过可能存在的 http_proxy，否则 127.0.0.1 的健康检查会被代理拦掉
-CURL="curl --noproxy 127.0.0.1,localhost"
+# curl 直连本机：绕过可能存在的 http_proxy，否则 127.0.0.1 的健康检查会被代理拦掉。
+# 带连接/总超时——服务异常时最坏等 15s 后继续走 warn 分支，不会把启动永久挂死。
+CURL="curl --noproxy 127.0.0.1,localhost --connect-timeout 3 --max-time 15"
 
 if [[ -t 1 ]]; then
   C_GRN=$'\033[32m'; C_YLW=$'\033[33m'; C_RED=$'\033[31m'; C_BLU=$'\033[34m'; C_RST=$'\033[0m'
@@ -133,7 +134,14 @@ start_core() {
     admin_key="$(cat "$CONFIG/.admin-key")"
   fi
   if [[ -z "$admin_key" ]]; then
-    admin_key="sk-mem-$(LC_ALL=C tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 32)"
+    # 纯 bash 生成，不起任何子进程：tr|head 读 /dev/urandom 的管道在部分环境
+    # （后台任务 / 无头 shell / SIGPIPE 被屏蔽时）会挂死，卡住整个启动流程
+    local _k="" _i _r
+    for _i in 1 2 3 4 5 6; do
+      printf -v _r '%05d' $((RANDOM % 100000))
+      _k+="$_r"
+    done
+    admin_key="sk-mem-$_k"
     echo "$admin_key" > "$CONFIG/.admin-key"
     chmod 600 "$CONFIG/.admin-key"
   fi

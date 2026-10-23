@@ -198,6 +198,11 @@
   -webkit-box-orient: vertical;
 }
 
+/* 描述为空时的占位文本（由业务页传入 i18n 文案） */
+._alp-item-desc-empty {
+  color: var(--tea-color-text-tertiary);
+}
+
 /* 徽章行 */
 ._alp-item-badges {
   display: flex;
@@ -225,6 +230,34 @@
 ._alp-badge-you {
   color: var(--tea-color-text-brand-default);
   font-weight: 500;
+}
+
+/* 本地位置（服务端 storage_dir 相对路径，形如 skills/skl-xxxx/v3）。
+   与时间同处徽章行时由本元素承担压缩量（min-width:0 是 flex 子项可截断的前提），
+   时间戳保持完整可见；完整值由 title 属性兜底。 */
+._alp-item-path {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  flex: 0 1 auto;
+  font-size: 11px;
+  color: var(--tea-color-text-tertiary);
+}
+
+._alp-item-path-label {
+  flex-shrink: 0;
+  /* label 用正文字号更清楚，与后方等宽值区分 */
+  font-size: 12px;
+}
+
+._alp-item-path-value {
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  unicode-bidi: plaintext;
 }
 
 /* 元信息行 */

@@ -17,17 +17,24 @@ import { useTeams } from '@/services';
 import { useSkillDetailCache } from '@/services/use-skill-detail-cache';
 import { tea } from '@/lib/tea-bridge';
 
-export type Tab = 'team' | 'fixed';
+/**
+ * Tab 语义：
+ *   - team  团队空间内 visibility=team 的共享 skill（全团队可见）
+ *   - mine  团队空间内 owner=我 的 skill（含已共享的 team + 仅我可见的 private）
+ *   - fixed 单个 agent 名下的固定资产（入口已隐藏，保留为死分支）
+ */
+export type Tab = 'team' | 'mine' | 'fixed';
 
 export const TAB_I18N_KEY: Record<Tab, string> = {
   team: 'skills.scope.team',
+  mine: 'skills.scope.mine',
   fixed: 'skills.scope.fixed',
 };
 
 export function useSkillsPanel() {
   const { t } = useTranslation();
-  // 当前需求：隐藏「Agent 资产」前端入口，默认展示「团队资产」。
-  // 如需恢复 fixed tab，把下面数组改回 ['team', 'fixed'] 并把 Segment 选项改回即可。
+  // 展示两档：「团队资产」与「我的」（团队内 private 且 owner=我）。
+  // 「Agent 资产」(fixed) 入口仍隐藏；恢复时把 Segment 选项加回 'fixed' 即可。
   const [tab, setTab] = useState<Tab>('team');
   const { activeTeamId, activeTeam } = useTeams();
   const myUserId = getPanelSession()?.user?.user_id ?? '';
@@ -146,15 +153,18 @@ export function useSkillsPanel() {
       setVisibilityMap({});
     }
     try {
-      if (tab === 'team') {
-        // 团队资产 tab 语义：**只显示共享的（visibility=team） skill**，
-        // 私密 skill（包括自己 owner 的）都不出现在这里。自己的私密去
-        // "我的资产分配" tab 查看和管理。
+      if (tab === 'team' || tab === 'mine') {
+        // team 语义：团队共享（visibility=team），不含任何人的私密。
+        // mine 语义：**owner=我** 的团队资产 —— 既包括我共享出去的（visibility=team），
+        //   也包括仅我可见的（visibility=private）。卡片上的「共享中/仅我可见」
+        //   切换器同时充当状态徽章。
+        //   与侧边栏「个人空间 → 我的技能」（team_id='personal'）不是同一份数据。
         //
         // 数据源（服务端严格过滤，抓包也拿不到不该看的）：
-        //   asset/list-accessible + visibility='team'
-        //     → 内核 SQL 层直接过滤 private，HTTP 响应体里根本不包含别人的
-        //       private，也不包含自己的 private，安全。
+        //   asset/list-accessible
+        //     → 不带 visibility 时返回"团队共享 + 我自己的 private"两部分；
+        //       内核 SQL 层直接过滤他人 private，HTTP 响应体里根本不包含。
+        //     → 带 visibility='team' 时只返回团队共享。
         //
         // 为什么不调 skill/list：
         //   数据面 skill/list 没有 visibility 概念，会把别人的 private 一并
@@ -166,11 +176,20 @@ export function useSkillsPanel() {
         //   getSkill()（N+1），用户还没点开任何一条就把全部详情拉回来。
         //   现在先用 asset 默认值渲染，version/owner_agent_id 等用户选中
         //   后才由 useSkillDetailCache 按需拉取并写入缓存。
-        const accessible = await assetsApi.listAccessible(activeTeamId, {
-          asset_type: 'skill',
-          action: 'read',
-          visibility: 'team',
-        });
+        // 两档共用同一套取数形状，只有 visibility / owner 收敛不同：
+        //   team → visibility='team'（团队共享）
+        //   mine → 不传 visibility（团队共享 + 我的 private），再按 owner=我 收敛
+        // 内核 SQL 层直接过滤，响应体里不含他人 private，也不含自己不该看到的。
+        const accessible = (
+          await assetsApi.listAccessible(activeTeamId, {
+            asset_type: 'skill',
+            action: 'read',
+            ...(tab === 'team' ? { visibility: 'team' as const } : {}),
+          })
+        ).filter((a) =>
+          // myUserId 缺失（异常态）时不筛，退化为"全部可访问"，避免整档空白
+          tab === 'team' || !myUserId ? true : a.owner_user_id === myUserId,
+        );
         if (seq !== refreshSeqRef.current) return; // 已被后续请求取代
         const visMap: Record<string, Asset['visibility']> = {};
         for (const a of accessible) visMap[a.asset_id] = a.visibility;
@@ -397,11 +416,14 @@ export function useSkillsPanel() {
         await assetsApi.update(skill.skill_id, { visibility: scope });
         // 局部更新 visibility 徽章，避免整表 flicker
         setVisibilityMap((prev) => ({ ...prev, [skill.skill_id]: scope }));
+        // team / mine 两档下条目会换档：共享后从「我的」迁到「团队」，设为私密则反向。
+        // 重新拉当前档，让迁移即时可见（fixed 档不涉及换档，保留局部更新即可）。
+        if (tab !== 'fixed') void refresh();
       } catch (err) {
         tea.notify.error(err);
       }
     },
-    [visibilityMap],
+    [visibilityMap, tab, refresh],
   );
 
   // 列表加载态（供左侧 AssetListPanel 使用）。
